@@ -1,16 +1,36 @@
-export default function Navbar({ rol }) {
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-    const tipos = {
-        paciente: ['Inicio', 'Mis Citas', 'Agendar', 'Perfil'],
-        medico: ['Inicio', 'Mi Agenda', 'Pacientes', 'Perfil'],
-        admin: ['Dashboard', 'Pacientes', 'Medicos', 'Pagos', 'Reportes']
-    }
+const linksPorRol = {
+    PACIENTE: [
+        { nombre: "Inicio", ruta: "/paciente" },
+        { nombre: "Mis Citas", ruta: "/paciente/mis-citas" },
+        { nombre: "Agendar", ruta: "/paciente/agendar" },
+        { nombre: "Perfil", ruta: "/paciente/perfil" },
+    ],
+    MEDICO: [
+        { nombre: "Inicio", ruta: "/medico" },
+        { nombre: "Mi Agenda", ruta: "/medico/agenda" },
+        { nombre: "Pacientes", ruta: "/medico/pacientes" },
+        { nombre: "Perfil", ruta: "/medico/perfil" },
+    ],
+    ADMINISTRADOR: [
+        { nombre: "Dashboard", ruta: "/admin" },
+        { nombre: "Pacientes", ruta: "/admin/pacientes" },
+        { nombre: "Medicos", ruta: "/admin/medicos" },
+        { nombre: "Pagos", ruta: "/admin/pagos" },
+        { nombre: "Reportes", ruta: "/admin/reportes" },
+    ],
+};
 
-    const linksActuales = tipos[rol]
+export default function Navbar() {
+    const { usuario, logout } = useAuth();
+    const links = linksPorRol[usuario?.rol] || [];
 
     return (
         <div className="navbar bg-primary shadow-sm">
             <div className="navbar-start">
+                {/* Menu hamburguesa - solo mobile */}
                 <div className="dropdown lg:hidden">
                     <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-content" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -20,21 +40,30 @@ export default function Navbar({ rol }) {
                     <ul
                         tabIndex={0}
                         className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow">
-                        {linksActuales.map((link) => (
-                            <li key={link}><a>{link}</a></li>
+                        {links.map((link) => (
+                            <li key={link.ruta}>
+                                <Link to={link.ruta}>{link.nombre}</Link>
+                            </li>
                         ))}
                     </ul>
                 </div>
-                <a className="btn btn-ghost text-xl text-primary-content">MediFlow</a>
+                <Link to="/" className="btn btn-ghost text-xl text-primary-content">MediFlow</Link>
             </div>
-            {/* Links centrados - solo visibles en desktop */}
+
+            {/* Links centrados - solo desktop */}
             <div className="navbar-center hidden lg:flex">
-                <ul className="menu menu-horizontal px-5 text-primary-content font-bold">
-                    {linksActuales.map((link) => (
-                        <li key={link}><a>{link}</a></li>
+                <ul className="menu menu-horizontal px-5 text-primary-content font-bold gap-2">
+                    {links.map((link) => (
+                        <li key={link.ruta}>
+                            <Link to={link.ruta} className="text-white hover:bg-primary-focus">
+                                {link.nombre}
+                            </Link>
+                        </li>
                     ))}
                 </ul>
             </div>
+
+            {/* Avatar y dropdown usuario */}
             <div className="navbar-end">
                 <div className="dropdown dropdown-end">
                     <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
@@ -47,14 +76,8 @@ export default function Navbar({ rol }) {
                     <ul
                         tabIndex={0}
                         className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow">
-                        <li>
-                            <a className="justify-between">
-                                Profile
-                                <span className="badge">New</span>
-                            </a>
-                        </li>
-                        <li><a>Settings</a></li>
-                        <li><a>Logout</a></li>
+                        <li><span className="font-bold">{usuario?.nombre}</span></li>
+                        <li><a onClick={logout}>Cerrar sesion</a></li>
                     </ul>
                 </div>
             </div>

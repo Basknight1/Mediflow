@@ -1,5 +1,5 @@
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer"
+import Navbar from "../../components/Navbar";
+import Footer from "../../components/Footer"
 /* Datos de ejemplo */
 const proximasCitas = [
   {
@@ -45,7 +45,7 @@ const estadoBadge = {
 export default function HomePaciente() {
   return (
     <div className="min-h-screen bg-base-200">
-      <Navbar rol="paciente" />
+      <Navbar />
 
       {/* HERO */}
       <section className="bg-primary px-6 py-12 sm:px-12 sm:py-16">
