@@ -70,15 +70,19 @@ export default function Navbar() {
                 </ul>
             </div>
 
-            <div className="navbar-end">
+            <div className="navbar-end gap-1">
+                <Link to={perfilRuta} className="btn btn-ghost btn-circle avatar">
+                    <div className="w-10 rounded-full">
+                        <img alt="Avatar usuario" src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                    </div>
+                </Link>
                 <div className="dropdown dropdown-end">
-                    <Link tabIndex={0} to={perfilRuta} role="button" className="btn btn-ghost btn-circle avatar">
-                        <div className="w-10 rounded-full">
-                            <img alt="Avatar usuario" src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
-                        </div>
-                    </Link>
+                    <div tabIndex={0} role="button" className="btn btn-ghost btn-sm text-primary-content">
+                        {usuario?.nombre?.split(" ").slice(0, 2).join(" ")} ▾
+                    </div>
                     <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow">
                         <li><span className="font-bold">{usuario?.nombre}</span></li>
+                        <li><Link to={perfilRuta}>Mi Perfil</Link></li>
                         <li><a onClick={logout}>Cerrar sesión</a></li>
                     </ul>
                 </div>

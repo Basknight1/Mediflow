@@ -38,6 +38,7 @@ export default function AuthProvider({ children }) {
             rol: datos.rol,
             rut: datos.rut,
             telefono: datos.telefono,
+            prevision: datos.prevision,
             createdAt: datos.createdAt
         }
 
@@ -56,16 +57,16 @@ export default function AuthProvider({ children }) {
                 biografia: src.biografia
             }
         }
-        
+
         setUsuario(usuarioBasico)
         localStorage.setItem('usuario', JSON.stringify(usuarioBasico))
-        
+
         // Guardar datos del médico si existen
         if (medicoDatos) {
             setMedico(medicoDatos)
             localStorage.setItem('medico', JSON.stringify(medicoDatos))
         }
-        
+
         console.log("Sesión iniciada:", { usuario: usuarioBasico, medico: medicoDatos })
     }
 
