@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const linksPorRol = {
@@ -10,9 +10,10 @@ const linksPorRol = {
     ],
     MEDICO: [
         { nombre: "Inicio", ruta: "/medico" },
-        { nombre: "Mi Agenda", ruta: "/medico/agenda" },
+        { nombre: "Mi Agenda", ruta: "/medico/mi-agenda" },
         { nombre: "Pacientes", ruta: "/medico/pacientes" },
         { nombre: "Perfil", ruta: "/medico/perfil" },
+        
     ],
     ADMINISTRADOR: [
         { nombre: "Dashboard", ruta: "/admin" },
@@ -25,6 +26,7 @@ const linksPorRol = {
 
 export default function Navbar() {
     const { usuario, logout } = useAuth();
+    const { pathname } = useLocation();
     const links = linksPorRol[usuario?.rol] || [];
 
     return (
@@ -53,24 +55,31 @@ export default function Navbar() {
             {/* Links centrados - solo desktop */}
             <div className="navbar-center hidden lg:flex">
                 <ul className="menu menu-horizontal px-5 text-primary-content font-bold gap-2">
-                    {links.map((link) => (
-                        <li key={link.ruta}>
-                            <Link to={link.ruta} className="text-white hover:bg-primary-focus">
-                                {link.nombre}
-                            </Link>
-                        </li>
-                    ))}
+                    {links.map((link) => {
+                        const activo = pathname === link.ruta;
+                        return (
+                            <li key={link.ruta}>
+                                <Link
+                                    to={link.ruta}
+                                    className={activo
+                                        ? "bg-primary-content text-primary rounded-lg"
+                                        : "text-white hover:bg-primary-focus"
+                                    }
+                                >
+                                    {link.nombre}
+                                </Link>
+                            </li>
+                        );
+                    })}
                 </ul>
             </div>
 
             {/* Avatar y dropdown usuario */}
             <div className="navbar-end">
                 <div className="dropdown dropdown-end">
-                    <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-                        <div className="w-10 rounded-full">
-                            <img
-                                alt="Avatar usuario"
-                                src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                    <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar placeholder">
+                        <div className="bg-primary-content text-primary rounded-full w-10 flex items-center justify-center font-bold text-sm">
+                            {(usuario?.nombre || "U").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
                         </div>
                     </div>
                     <ul
