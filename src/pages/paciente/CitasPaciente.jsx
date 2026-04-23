@@ -1,72 +1,92 @@
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
-
-/* Datos de ejemplo */
-const proximasCitas = [
-  {
-    id: 1,
-    doctor: "Dra. Ana López",
-    especialidad: "Dermatología",
-    fecha: "Lun 08 Abr",
-    hora: "10:30",
-    estado: "Confirmada",
-  },
-  {
-    id: 2,
-    doctor: "Dr. Carlos Ruiz",
-    especialidad: "Cardiología",
-    fecha: "Mié 10 Abr",
-    hora: "11:00",
-    estado: "Pendiente",
-  },
-  {
-    id: 3,
-    doctor: "Dra. María Paz Soler",
-    especialidad: "Psicología",
-    fecha: "Vie 12 Abr",
-    hora: "15:00",
-    estado: "Confirmada",
-  },
-  {
-    id: 4,
-    doctor: "Dr. José Contreras",
-    especialidad: "Traumatología",
-    fecha: "Lun 15 Abr",
-    hora: "09:00",
-    estado: "Pendiente",
-  },
-  {
-    id: 5,
-    doctor: "Dra. Valentina Torres",
-    especialidad: "Medicina General",
-    fecha: "Mié 03 Mar",
-    hora: "08:30",
-    estado: "Confirmada",
-  },
-  {
-    id: 6,
-    doctor: "Dr. Rodrigo Valdés",
-    especialidad: "Neurología",
-    fecha: "Vie 21 Feb",
-    hora: "16:00",
-    estado: "Cancelada",
-  },
-];
+import { useAuth } from "../../context/AuthContext";
+import { medicosMap, medicosEspecialidadMap } from "../../data/medicos";
+import axios from "axios";
 
 /* ─── Mapeo estado → clases DaisyUI ─── */
 const estadoBadge = {
-  Confirmada: "badge-success",
-  Pendiente: "badge-warning",
-  Cancelada: "badge-error",
+  CONFIRMADA: "badge-success",
+  PENDIENTE: "badge-warning",
+  CANCELADA: "badge-error",
+};
+
+/* ─── Etiquetas legibles ─── */
+const estadoLabel = {
+  CONFIRMADA: "Confirmada",
+  PENDIENTE: "Pendiente",
+  CANCELADA: "Cancelada",
+};
+
+/* ─── Formatear fecha legible ─── */
+const formatearFecha = (fechaStr) => {
+  if (!fechaStr) return "";
+  const fecha = new Date(fechaStr + "T00:00:00");
+  return fecha.toLocaleDateString("es-CL", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  });
+};
+
+/* ─── Formatear hora (quitar segundos) ─── */
+const formatearHora = (horaStr) => {
+  if (!horaStr) return "";
+  return horaStr.substring(0, 5);
 };
 
 export default function CitasPaciente() {
-  const [filtroActivo, setFiltroActivo] = useState("Todas")
+  const { usuario } = useAuth();
+  const navigate = useNavigate();
 
-  const citasFiltradas = filtroActivo === "Todas"
-    ? proximasCitas
-    : proximasCitas.filter(cita => cita.estado === filtroActivo)
+  const [citas, setCitas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filtroActivo, setFiltroActivo] = useState("Todas");
+
+  useEffect(() => {
+    const cargarCitas = async () => {
+      if (!usuario?.id) return;
+
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `http://localhost:8082/citas/paciente/${usuario.id}`
+        );
+
+        // Enriquecer con nombre del doctor y especialidad
+        const citasEnriquecidas = response.data.map((cita) => ({
+          ...cita,
+          doctorNombre: medicosMap[cita.medicoId] || "Médico ID " + cita.medicoId,
+          especialidad: medicosEspecialidadMap[cita.medicoId] || cita.tipo,
+        }));
+
+        // Ordenar por fecha más reciente primero
+        citasEnriquecidas.sort((a, b) => {
+          const fechaA = new Date(a.fecha + "T" + a.hora);
+          const fechaB = new Date(b.fecha + "T" + b.hora);
+          return fechaB - fechaA;
+        });
+
+        setCitas(citasEnriquecidas);
+      } catch (err) {
+        console.error("Error al cargar citas:", err);
+        setError("No se pudieron cargar las citas.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargarCitas();
+  }, [usuario]);
+
+  // Filtrar según el filtro activo
+  const citasFiltradas =
+    filtroActivo === "Todas"
+      ? citas
+      : citas.filter((cita) => cita.estado === filtroActivo);
+
   return (
     <div className="min-h-screen bg-base-200">
       <Navbar />
@@ -83,7 +103,9 @@ export default function CitasPaciente() {
           </h1>
 
           <p className="text-primary-content/70 text-base sm:text-lg mb-8">
-            Revisa tus próximas citas médicas.
+            {loading
+              ? "Cargando..."
+              : `Tienes ${citas.length} cita${citas.length !== 1 ? "s" : ""} en total.`}
           </p>
         </div>
       </section>
@@ -111,71 +133,98 @@ export default function CitasPaciente() {
                 type="radio"
                 name="filtro"
                 aria-label="Confirmada"
-                checked={filtroActivo === "Confirmada"}
-                onChange={() => setFiltroActivo("Confirmada")}
+                checked={filtroActivo === "CONFIRMADA"}
+                onChange={() => setFiltroActivo("CONFIRMADA")}
               />
               <input
                 className="btn btn-primary"
                 type="radio"
                 name="filtro"
                 aria-label="Pendiente"
-                checked={filtroActivo === "Pendiente"}
-                onChange={() => setFiltroActivo("Pendiente")}
+                checked={filtroActivo === "PENDIENTE"}
+                onChange={() => setFiltroActivo("PENDIENTE")}
               />
               <input
                 className="btn btn-primary"
                 type="radio"
                 name="filtro"
                 aria-label="Cancelada"
-                checked={filtroActivo === "Cancelada"}
-                onChange={() => setFiltroActivo("Cancelada")}
+                checked={filtroActivo === "CANCELADA"}
+                onChange={() => setFiltroActivo("CANCELADA")}
               />
             </div>
           </div>
 
 
-          {/* ── COLUMNA IZQUIERDA: Próximas Citas (2/3) ── */}
+          {/* ── COLUMNA IZQUIERDA: Historial de Citas ── */}
           <div className="">
             <h2 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
               📅 Historial de Citas
             </h2>
 
             <div className="flex flex-col gap-3">
-              {citasFiltradas.map((cita) => (
-                <div
-                  key={cita.id}
-                  className="card bg-base-100 shadow-sm
-                             hover:shadow-md
-                             transition-shadow duration-200"
-                >
-                  <div className="card-body p-4 sm:p-5 flex-row items-center gap-4">
-                    {/* Icono */}
-                    <div className="bg-base-200 rounded-xl w-12 h-12 flex items-center justify-center shrink-0">
-                      <span className="text-xl">🩺</span>
-                    </div>
-
-                    {/* Info del doctor */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-base-content truncate">
-                        {cita.doctor}
-                      </p>
-                      <p className="text-sm text-base-content/60">
-                        {cita.especialidad}
-                      </p>
-                    </div>
-
-                    {/* Fecha + Badge */}
-                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                      <span className="text-xs text-base-content/60">
-                        {cita.fecha} · {cita.hora}
-                      </span>
-                      <span className={`badge badge-sm ${estadoBadge[cita.estado]}`}>
-                        {cita.estado}
-                      </span>
-                    </div>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                </div>
+              ) : error ? (
+                <div className="alert alert-error">
+                  <span>⚠️ {error}</span>
+                </div>
+              ) : citasFiltradas.length === 0 ? (
+                <div className="card bg-base-100 shadow-sm">
+                  <div className="card-body items-center text-center py-8">
+                    <span className="text-4xl mb-2">📭</span>
+                    <p className="text-base-content/60">
+                      {filtroActivo === "Todas"
+                        ? "No tienes citas registradas."
+                        : `No tienes citas con estado "${estadoLabel[filtroActivo]}".`}
+                    </p>
+                    <button
+                      className="btn btn-primary btn-sm mt-2"
+                      onClick={() => navigate("/paciente/agendar")}
+                    >
+                      Agendar una cita
+                    </button>
                   </div>
                 </div>
-              ))}
+              ) : (
+                citasFiltradas.map((cita) => (
+                  <div
+                    key={cita.id}
+                    className="card bg-base-100 shadow-sm
+                               hover:shadow-md
+                               transition-shadow duration-200"
+                  >
+                    <div className="card-body p-4 sm:p-5 flex-row items-center gap-4">
+                      {/* Icono */}
+                      <div className="bg-base-200 rounded-xl w-12 h-12 flex items-center justify-center shrink-0">
+                        <span className="text-xl">🩺</span>
+                      </div>
+
+                      {/* Info del doctor */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-base-content truncate">
+                          {cita.doctorNombre}
+                        </p>
+                        <p className="text-sm text-base-content/60">
+                          {cita.especialidad}
+                        </p>
+                      </div>
+
+                      {/* Fecha + Badge */}
+                      <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                        <span className="text-xs text-base-content/60">
+                          {formatearFecha(cita.fecha)} · {formatearHora(cita.hora)}
+                        </span>
+                        <span className={`badge badge-sm ${estadoBadge[cita.estado]}`}>
+                          {estadoLabel[cita.estado]}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

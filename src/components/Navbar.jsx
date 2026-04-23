@@ -5,8 +5,8 @@ const linksPorRol = {
     PACIENTE: [
         { nombre: "Inicio", ruta: "/paciente" },
         { nombre: "Mis Citas", ruta: "/paciente/mis-citas" },
-        { nombre: "Agendar", ruta: "/paciente/agendar" },
-        { nombre: "Perfil", ruta: "/paciente/perfil" },
+        { nombre: "Agendar Cita", ruta: "/paciente/agendar" },
+        { nombre: "Mi Ficha Médica", ruta: "/paciente/ficha" },
     ],
     MEDICO: [
         { nombre: "Inicio", ruta: "/medico" },
@@ -26,6 +26,7 @@ const linksPorRol = {
 export default function Navbar() {
     const { usuario, logout } = useAuth();
     const links = linksPorRol[usuario?.rol] || [];
+    const esPaciente = usuario?.rol === "PACIENTE";
 
     return (
         <div className="navbar bg-primary shadow-sm">
@@ -65,21 +66,35 @@ export default function Navbar() {
 
             {/* Avatar y dropdown usuario */}
             <div className="navbar-end">
-                <div className="dropdown dropdown-end">
-                    <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+                {esPaciente ? (
+                    <Link
+                        to="/paciente/perfil"
+                        className="btn btn-ghost btn-circle avatar"
+                        title="Mi Perfil"
+                    >
                         <div className="w-10 rounded-full">
                             <img
                                 alt="Avatar usuario"
                                 src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
                         </div>
+                    </Link>
+                ) : (
+                    <div className="dropdown dropdown-end">
+                        <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+                            <div className="w-10 rounded-full">
+                                <img
+                                    alt="Avatar usuario"
+                                    src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                            </div>
+                        </div>
+                        <ul
+                            tabIndex={0}
+                            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow">
+                            <li><span className="font-bold">{usuario?.nombre}</span></li>
+                            <li><a onClick={logout}>Cerrar sesion</a></li>
+                        </ul>
                     </div>
-                    <ul
-                        tabIndex={0}
-                        className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow">
-                        <li><span className="font-bold">{usuario?.nombre}</span></li>
-                        <li><a onClick={logout}>Cerrar sesion</a></li>
-                    </ul>
-                </div>
+                )}
             </div>
         </div>
     );
