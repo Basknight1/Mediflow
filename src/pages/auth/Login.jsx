@@ -31,6 +31,60 @@ export default function Login() {
             console.log('Status:', error.response?.status)
             console.log('Mensaje:', error.response?.data)
             console.log('Error completo:', error)
+            
+            // Si el backend no está disponible, usar datos de prueba
+            if (error.code === "ECONNREFUSED" || error.code === "ERR_NETWORK") {
+                console.log("Backend no disponible, usando modo de prueba")
+                
+                // Datos de prueba según el email
+                let mockUser = null
+                if (email.includes("medico") || email.includes("doctor")) {
+                    mockUser = {
+                        id: 1,
+                        nombre: "Dr. Benjamín",
+                        email: email,
+                        rol: "MEDICO",
+                        telefono: "+56 9 1234 5678",
+                        createdAt: new Date().toISOString(),
+                        medico: {
+                            id: 1,
+                            especialidad: "Medicina General",
+                            rut: "12.345.678-9",
+                            numeroRegistro: "MED-45821",
+                            universidad: "Universidad de Chile",
+                            experiencia: "8 años",
+                            direccion: "Av. Providencia 1234, Santiago",
+                            biografia: "Médico general con experiencia en atención primaria, control de pacientes crónicos y seguimiento preventivo."
+                        }
+                    }
+                } else if (email.includes("admin")) {
+                    mockUser = {
+                        id: 2,
+                        nombre: "Administrador",
+                        email: email,
+                        rol: "ADMINISTRADOR",
+                        telefono: "+56 9 9876 5432",
+                        createdAt: new Date().toISOString()
+                    }
+                } else {
+                    mockUser = {
+                        id: 3,
+                        nombre: "Paciente",
+                        email: email,
+                        rol: "PACIENTE",
+                        telefono: "+56 9 5555 6666",
+                        createdAt: new Date().toISOString()
+                    }
+                }
+                
+                login(mockUser)
+                console.log("Usuario de prueba:", mockUser)
+                
+                const rol = mockUser.rol
+                if (rol === "ADMINISTRADOR") navigate("/admin")
+                else if (rol === "MEDICO") navigate("/medico")
+                else if (rol === "PACIENTE") navigate("/paciente")
+            }
         }
     }
 
