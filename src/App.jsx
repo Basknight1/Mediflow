@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/auth/Login'
-import HomeAdministrador from './pages/admin/HomeAdministrador'
 import HomeMedico from './pages/medico/HomeMedico'
 import AgendaMedico from './pages/medico/AgendaMedico'
 import PerfilMedico from './pages/medico/PerfilMedico'
@@ -11,6 +10,9 @@ import AgendarCita from './pages/paciente/AgendarCita'
 import CitasPaciente from './pages/paciente/CitasPaciente'
 import MiFichaPaciente from './pages/paciente/MiFichaPaciente'
 import MiPerfilPaciente from './pages/paciente/MiPerfilPaciente'
+import HomeAdmin from './pages/admin/HomeAdmin'
+import PacientesAdmin from './pages/admin/PacientesAdmin'
+import MedicosAdmin from './pages/admin/MedicosAdmin'
 
 function App() {
   return (
@@ -19,7 +21,19 @@ function App() {
 
       <Route path="/admin" element={
         <ProtectedRoute rolRequerido="ADMINISTRADOR">
-          <HomeAdministrador />
+          <HomeAdmin />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/pacientes" element={
+        <ProtectedRoute rolRequerido="ADMINISTRADOR">
+          <PacientesAdmin />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/medicos" element={
+        <ProtectedRoute rolRequerido="ADMINISTRADOR">
+          <MedicosAdmin />
         </ProtectedRoute>
       } />
 

@@ -6,9 +6,9 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 const accesosRapidos = [
-  { label: "Mi agenda", ruta: "/medico/mi-agenda" },
-  { label: "Mis pacientes", ruta: "/medico/pacientes" },
-  { label: "Perfil", ruta: "/medico/perfil" },
+  { label: "Mi agenda", emoji: "📅", ruta: "/medico/mi-agenda" },
+  { label: "Mis pacientes", emoji: "👥", ruta: "/medico/pacientes" },
+  { label: "Perfil", emoji: "👤", ruta: "/medico/perfil" },
 ];
 
 const estadoBadge = {
@@ -109,6 +109,7 @@ export default function HomeMedico() {
             <Link key={item.label} to={item.ruta}>
               <div className="card bg-base-100 shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 h-full">
                 <div className="card-body items-center text-center p-4">
+                  <span className="text-2xl">{item.emoji}</span>
                   <span className="text-sm font-semibold text-base-content">{item.label}</span>
                 </div>
               </div>

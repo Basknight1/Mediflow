@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import { useAuth } from "../../context/AuthContext";
-import { medicosMap, medicosEspecialidadMap } from "../../data/medicos";
 import axios from "axios";
 
 /* ─── Mapeo estado → clases DaisyUI ─── */
@@ -48,38 +47,46 @@ export default function CitasPaciente() {
   useEffect(() => {
     const cargarCitas = async () => {
       if (!usuario?.id) return;
-
       try {
         setLoading(true);
         const response = await axios.get(
           `http://localhost:8082/citas/paciente/${usuario.id}`
         );
 
-        // Enriquecer con nombre del doctor y especialidad
-        const citasEnriquecidas = response.data.map((cita) => ({
-          ...cita,
-          doctorNombre: medicosMap[cita.medicoId] || "Médico ID " + cita.medicoId,
-          especialidad: medicosEspecialidadMap[cita.medicoId] || cita.tipo,
-        }));
+        const citasEnriquecidas = await Promise.all(
+          response.data.map(async (cita) => {
+            try {
+              const medicoRes = await axios.get(`http://localhost:8081/usuarios/${cita.medicoId}`)
+              return {
+                ...cita,
+                doctorNombre: medicoRes.data.nombre,
+                especialidad: medicoRes.data.especialidad
+              }
+            } catch {
+              return {
+                ...cita,
+                doctorNombre: `Médico ID ${cita.medicoId}`,
+                especialidad: cita.tipo
+              }
+            }
+          })
+        )
 
-        // Ordenar por fecha más reciente primero
         citasEnriquecidas.sort((a, b) => {
-          const fechaA = new Date(a.fecha + "T" + a.hora);
-          const fechaB = new Date(b.fecha + "T" + b.hora);
-          return fechaB - fechaA;
-        });
+          const fechaA = new Date(a.fecha + "T" + a.hora)
+          const fechaB = new Date(b.fecha + "T" + b.hora)
+          return fechaB - fechaA
+        })
 
-        setCitas(citasEnriquecidas);
+        setCitas(citasEnriquecidas)
       } catch (err) {
-        console.error("Error al cargar citas:", err);
-        setError("No se pudieron cargar las citas.");
+        setError("No se pudieron cargar las citas.")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-
-    cargarCitas();
-  }, [usuario]);
+    }
+    cargarCitas()
+  }, [usuario])
 
   // Filtrar según el filtro activo
   const citasFiltradas =

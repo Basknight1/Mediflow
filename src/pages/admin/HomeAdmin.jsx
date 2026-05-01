@@ -1,4 +1,5 @@
 import Navbar from "../../components/Navbar";
+
 /* Datos de ejemplo de Próximas citas */
 const proximasCitas = [
   {
@@ -7,7 +8,7 @@ const proximasCitas = [
     tipoconsulta: "Medicina General",
     fecha: "Mar 12 May de 2026",
     hora: "15:00",
-    estado: "Pendiente",
+    estado: "Pendiente", 
   },
   {
     id: 2,
@@ -72,7 +73,7 @@ const pagoBadge = {
   Pendiente: "badge-warning",
 };
 
-export default function HomeAdministrador() {
+export default function HomeAdmin() {
   return (
     <div className="min-h-screen bg-base-200">
       <Navbar />

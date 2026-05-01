@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer"
 import { useAuth } from "../../context/AuthContext";
-import { medicosMap, medicosEspecialidadMap } from "../../data/medicos";
 import axios from "axios";
 
 const accesosRapidos = [
@@ -55,25 +54,31 @@ export default function HomePaciente() {
   useEffect(() => {
     const cargarCitas = async () => {
       if (!usuario?.id) return;
-
       try {
         setLoading(true);
-        // Obtener citas del paciente desde ms-citas
         const citasRes = await axios.get(
           `http://localhost:8082/citas/paciente/${usuario.id}`
         );
 
-        const citasData = citasRes.data;
+        const citasEnriquecidas = await Promise.all(
+          citasRes.data.map(async (cita) => {
+            try {
+              const medicoRes = await axios.get(`http://localhost:8081/usuarios/${cita.medicoId}`)
+              return {
+                ...cita,
+                doctorNombre: medicoRes.data.nombre,
+                especialidad: medicoRes.data.especialidad
+              }
+            } catch {
+              return {
+                ...cita,
+                doctorNombre: `Médico ID ${cita.medicoId}`,
+                especialidad: cita.tipo
+              }
+            }
+          })
+        )
 
-        // Enriquecer las citas con nombre del doctor y especialidad
-        // usando el mapeo local hardcodeado (temporal)
-        const citasEnriquecidas = citasData.map((cita) => ({
-          ...cita,
-          doctorNombre: medicosMap[cita.medicoId] || "Médico ID " + cita.medicoId,
-          especialidad: medicosEspecialidadMap[cita.medicoId] || cita.tipo,
-        }));
-
-        // Filtrar solo citas futuras o del día de hoy, y que no estén canceladas
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
 
@@ -87,7 +92,7 @@ export default function HomePaciente() {
             const fechaB = new Date(b.fecha + "T" + b.hora);
             return fechaA - fechaB;
           })
-          .slice(0, 3); // Mostrar las 3 más próximas
+          .slice(0, 3);
 
         setCitas(citasProximas);
       } catch (err) {
@@ -97,7 +102,6 @@ export default function HomePaciente() {
         setLoading(false);
       }
     };
-
     cargarCitas();
   }, [usuario]);
 
@@ -288,26 +292,6 @@ export default function HomePaciente() {
                     <p className="font-bold text-base-content">
                       {usuario?.rut || "No disponible"}
                     </p>
-                  </div>
-                </div>
-
-                <div className="divider my-0"></div>
-
-                {/* Último Examen */}
-                <div>
-                  <p className="text-xs text-base-content/50 uppercase font-medium tracking-wide mb-2">
-                    Último Examen
-                  </p>
-                  <div
-                    className="bg-base-200 rounded-xl p-3 flex items-center gap-3
-                               cursor-pointer hover:bg-base-300 transition-colors duration-200"
-                  >
-                    <span className="text-lg">🔬</span>
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm text-base-content">Perfil Bioquímico</p>
-                      <p className="text-xs text-base-content/50">04 de Abril, 2024</p>
-                    </div>
-                    <span className="text-base-content/30">›</span>
                   </div>
                 </div>
               </div>

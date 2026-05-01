@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
-import { medicos } from "../../data/medicos";
 
 const especialidades = [
     { id: 1, nombre: "Medicina General", icono: "💊" },
@@ -55,6 +54,18 @@ export default function AgendarCita() {
     const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState(null);
     const [pasoActual, setPasoActual] = useState(1);
     const [medicoSeleccionado, setMedicoSeleccionado] = useState(null);
+    const [medicosReales, setMedicosReales] = useState([]);
+
+
+    // Hacemos la petición de los medicos que hay en el backend
+    // Para detectar los médicos existentes y así poderlos mostrar en el frontend.
+    useEffect(() => {
+        if (especialidadSeleccionada) {
+            axios.get(`http://localhost:8081/usuarios/medicos/especialidad/${especialidadSeleccionada.nombre}`)
+                .then(res => setMedicosReales(res.data))
+                .catch(err => console.error("Error al cargar medicos", err))
+        }
+    }, [especialidadSeleccionada])
 
     const [fecha, setFecha] = useState("");
     const [hora, setHora] = useState("");
@@ -122,8 +133,7 @@ export default function AgendarCita() {
                         <>
                             <h2 className="text-lg font-bold mb-4">¿Con qué médico quieres atenderte?</h2>
                             <div className="flex flex-col gap-3">
-                                {medicos
-                                    .filter(m => m.especialidad === especialidadSeleccionada?.nombre)
+                                {medicosReales
                                     .map((medico) => (
                                         <div
                                             key={medico.id}

@@ -23,13 +23,20 @@ export default function PacientesMedico() {
 
     const cargar = async () => {
       try {
-        // Obtener IDs únicos de pacientes del médico
-        const idsRes = await axios.get(`http://localhost:8082/citas/pacientes/medico/${usuario.id}`);
-        const ids = idsRes.data;
+        // Obtener citas del medico y extraer IDs unicos de pacientes
+        const citasRes = await axios.get(`http://localhost:8082/citas/medico/${usuario.id}`);
+        const citas = Array.isArray(citasRes.data) ? citasRes.data : [];
+        const pacienteIds = [
+          ...new Set(
+            citas
+              .map((item) => (typeof item === "object" ? item.pacienteId : item))
+              .filter(Boolean)
+          ),
+        ];
 
-        // Obtener datos de cada paciente
+        // Obtener datos de cada paciente por su ID
         const resultados = await Promise.all(
-          ids.map(async (id) => {
+          pacienteIds.map(async (id) => {
             try {
               const r = await axios.get(`http://localhost:8081/usuarios/${id}`);
               return r.data;
