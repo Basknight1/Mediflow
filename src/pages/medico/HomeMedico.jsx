@@ -15,12 +15,14 @@ const estadoBadge = {
   CONFIRMADA: "badge-success",
   PENDIENTE: "badge-warning",
   CANCELADA: "badge-error",
+  FINALIZADA: "badge-primary",
 };
 
 const estadoLabel = {
   CONFIRMADA: "Confirmada",
   PENDIENTE: "Pendiente",
   CANCELADA: "Cancelada",
+  FINALIZADA: "Finalizada",
 };
 
 export default function HomeMedico() {

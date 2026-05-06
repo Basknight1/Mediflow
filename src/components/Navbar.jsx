@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import avatarDefault from '../assets/avatar-default.png'
 
 const linksPorRol = {
     PACIENTE: [
@@ -18,7 +19,7 @@ const linksPorRol = {
         { nombre: "Dashboard", ruta: "/admin" },
         { nombre: "Pacientes", ruta: "/admin/pacientes" },
         { nombre: "Medicos", ruta: "/admin/medicos" },
-        { nombre: "Pagos", ruta: "/admin/pagos" },
+        { nombre: "Citas y Pagos", ruta: "/admin/citas-pagos" },
         { nombre: "Reportes", ruta: "/admin/reportes" },
     ],
 };
@@ -73,7 +74,7 @@ export default function Navbar() {
             <div className="navbar-end gap-1">
                 <Link to={perfilRuta} className="btn btn-ghost btn-circle avatar">
                     <div className="w-10 rounded-full">
-                        <img alt="Avatar usuario" src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                        <img src={avatarDefault} alt="Avatar usuario" />
                     </div>
                 </Link>
                 <div className="dropdown dropdown-end">

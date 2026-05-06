@@ -3,6 +3,7 @@ import axios from "axios";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
+import AvatarDefault from "../../assets/avatar-default.png"
 
 const HARDCODEADOS = {
     foto: "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp",
@@ -94,7 +95,7 @@ export default function MiPerfilPaciente() {
                         <div className="relative">
                             <div className="avatar">
                                 <div className="w-32 h-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                                    <img src={val("foto")} alt="Foto perfil" />
+                                    <img src={AvatarDefault} alt="Avatar usuario" />
                                 </div>
                             </div>
                             {editando && (

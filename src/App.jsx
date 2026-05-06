@@ -13,6 +13,7 @@ import MiPerfilPaciente from './pages/paciente/MiPerfilPaciente'
 import HomeAdmin from './pages/admin/HomeAdmin'
 import PacientesAdmin from './pages/admin/PacientesAdmin'
 import MedicosAdmin from './pages/admin/MedicosAdmin'
+import CitasYPagosAdmin from './pages/admin/CitasYPagosAdmin'
 
 function App() {
   return (
@@ -34,6 +35,12 @@ function App() {
       <Route path="/admin/medicos" element={
         <ProtectedRoute rolRequerido="ADMINISTRADOR">
           <MedicosAdmin />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/citas-pagos" element={
+        <ProtectedRoute rolRequerido="ADMINISTRADOR">
+          <CitasYPagosAdmin />
         </ProtectedRoute>
       } />
 

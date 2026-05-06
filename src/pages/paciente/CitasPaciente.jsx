@@ -9,6 +9,7 @@ const estadoBadge = {
   CONFIRMADA: "badge-success",
   PENDIENTE: "badge-warning",
   CANCELADA: "badge-error",
+  FINALIZADA: "badge-primary",
 };
 
 /* ─── Etiquetas legibles ─── */
@@ -16,6 +17,7 @@ const estadoLabel = {
   CONFIRMADA: "Confirmada",
   PENDIENTE: "Pendiente",
   CANCELADA: "Cancelada",
+  FINALIZADA: "Finalizada",
 };
 
 /* ─── Formatear fecha legible ─── */
@@ -40,7 +42,11 @@ export default function CitasPaciente() {
   const navigate = useNavigate();
 
   const [citas, setCitas] = useState([]);
+  const [pagos, setPagos] = useState([]);
+  const [pagoSeleccionado, setPagoSeleccionado] = useState(null);
+  const [pagando, setPagando] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [boletaSeleccionada, setBoletaSeleccionada] = useState(null)
   const [error, setError] = useState(null);
   const [filtroActivo, setFiltroActivo] = useState("Todas");
 
@@ -52,6 +58,9 @@ export default function CitasPaciente() {
         const response = await axios.get(
           `http://localhost:8082/citas/paciente/${usuario.id}`
         );
+
+        const pagosRes = await axios.get(`http://localhost:8083/pagos/paciente/${usuario.id}`)
+        setPagos(Array.isArray(pagosRes.data) ? pagosRes.data : [])
 
         const citasEnriquecidas = await Promise.all(
           response.data.map(async (cita) => {
@@ -87,6 +96,29 @@ export default function CitasPaciente() {
     }
     cargarCitas()
   }, [usuario])
+
+  // Poder realizar los pagos de las boletas que están en "PENDIENTE"
+  const realizarPago = async () => {
+    if (!pagoSeleccionado) return
+    try {
+      setPagando(true)
+      await axios.put(`http://localhost:8083/pagos/${pagoSeleccionado.id}/pagar`)
+      setPagos(pagos.map(p =>
+        p.id === pagoSeleccionado.id
+          ? { ...p, estado: 'PAGADO' }
+          : p
+      ))
+      setPagoSeleccionado(null)
+    } catch (error) {
+      console.error("Error al realizar el pago", error)
+    } finally {
+      setPagando(false)
+    }
+  }
+
+  const obtenerPagoDeCita = (citaId) => {
+    return pagos.find(p => p.citaId === citaId) || null
+  }
 
   // Filtrar según el filtro activo
   const citasFiltradas =
@@ -199,43 +231,141 @@ export default function CitasPaciente() {
                 citasFiltradas.map((cita) => (
                   <div
                     key={cita.id}
-                    className="card bg-base-100 shadow-sm
-                               hover:shadow-md
-                               transition-shadow duration-200"
+                    className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow duration-200"
                   >
-                    <div className="card-body p-4 sm:p-5 flex-row items-center gap-4">
-                      {/* Icono */}
-                      <div className="bg-base-200 rounded-xl w-12 h-12 flex items-center justify-center shrink-0">
-                        <span className="text-xl">🩺</span>
+                    <div className="card-body p-4 sm:p-5 flex-col gap-3">
+                      {/* Fila principal */}
+                      <div className="flex-row flex items-center gap-4">
+                        {/* Icono */}
+                        <div className="bg-base-200 rounded-xl w-12 h-12 flex items-center justify-center shrink-0">
+                          <span className="text-xl">🩺</span>
+                        </div>
+
+                        {/* Info del doctor */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-base-content truncate">{cita.doctorNombre}</p>
+                          <p className="text-sm text-base-content/60">{cita.especialidad}</p>
+                        </div>
+
+                        {/* Fecha + Badge estado */}
+                        <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                          <span className="text-xs text-base-content/60">
+                            {formatearFecha(cita.fecha)} · {formatearHora(cita.hora)}
+                          </span>
+                          <span className={`badge badge-sm ${estadoBadge[cita.estado]}`}>
+                            {estadoLabel[cita.estado]}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Info del doctor */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-base-content truncate">
-                          {cita.doctorNombre}
-                        </p>
-                        <p className="text-sm text-base-content/60">
-                          {cita.especialidad}
-                        </p>
-                      </div>
-
-                      {/* Fecha + Badge */}
-                      <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                        <span className="text-xs text-base-content/60">
-                          {formatearFecha(cita.fecha)} · {formatearHora(cita.hora)}
-                        </span>
-                        <span className={`badge badge-sm ${estadoBadge[cita.estado]}`}>
-                          {estadoLabel[cita.estado]}
-                        </span>
-                      </div>
+                      {/* Fila de pago solo si está confirmada y tiene pago */}
+                      {(cita.estado === 'CONFIRMADA' || cita.estado === 'FINALIZADA') && obtenerPagoDeCita(cita.id) && (
+                        <>
+                          <div className="divider my-0"></div>
+                          <div className="flex items-center justify-between">
+                            {obtenerPagoDeCita(cita.id).estado === 'PAGADO' ? (
+                              <>
+                                <span className="text-sm text-success font-semibold flex items-center gap-1">
+                                  ✓ Pago completado
+                                </span>
+                                <button
+                                  className="btn btn-outline btn-primary btn-xs transition delay-50 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110"
+                                  onClick={() => setBoletaSeleccionada(obtenerPagoDeCita(cita.id))}
+                                >
+                                  Ver boleta
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-sm text-warning font-semibold flex items-center gap-1">
+                                  Pago pendiente
+                                </span>
+                                <button
+                                  className="btn btn-warning btn-xs transition delay-50 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110"
+                                  onClick={() => setPagoSeleccionado(obtenerPagoDeCita(cita.id))}
+                                >
+                                  Pagar boleta
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))
               )}
             </div>
+
           </div>
         </div>
       </main>
+
+      {pagoSeleccionado && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-sm">
+            <h3 className="font-bold text-lg mb-4">Pagar Consulta</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="font-semibold text-base-content/60">N° Boleta</span>
+                <span>{pagoSeleccionado.numeroBoleta}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold text-base-content/60">Descripción</span>
+                <span>{pagoSeleccionado.descripcion}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold text-base-content/60">Monto</span>
+                <span className="font-bold text-lg">${pagoSeleccionado.monto?.toLocaleString('es-CL')}</span>
+              </div>
+            </div>
+            <div className="modal-action">
+              <button className="btn btn-ghost" onClick={() => setPagoSeleccionado(null)}>Cancelar</button>
+              <button
+                className="btn btn-success text-white transition delay-50 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110"
+                onClick={realizarPago}
+                disabled={pagando}
+              >
+                {pagando ? <span className="loading loading-spinner loading-sm"></span> : '✓ Confirmar Pago'}
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setPagoSeleccionado(null)}></div>
+        </div>
+      )}
+      {boletaSeleccionada && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-sm">
+            <h3 className="font-bold text-lg mb-4">Boleta de Pago</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="font-semibold text-base-content/60">N° Boleta</span>
+                <span className="font-bold">{boletaSeleccionada.numeroBoleta}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold text-base-content/60">Descripción</span>
+                <span>{boletaSeleccionada.descripcion}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold text-base-content/60">Monto</span>
+                <span className="font-bold text-lg text-success">${boletaSeleccionada.monto?.toLocaleString('es-CL')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold text-base-content/60">Fecha pago</span>
+                <span>{boletaSeleccionada.fechaPago?.split('-').reverse().join('/')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-semibold text-base-content/60">Estado</span>
+                <span className="badge badge-sm badge-success">Pagado</span>
+              </div>
+            </div>
+            <div className="modal-action">
+              <button className="btn btn-primary btn-sm" onClick={() => setBoletaSeleccionada(null)}>Cerrar</button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setBoletaSeleccionada(null)}></div>
+        </div>
+      )}
     </div>
   );
 }

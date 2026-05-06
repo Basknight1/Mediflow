@@ -3,6 +3,7 @@ import Footer from "../../components/Footer";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
+import AvatarDefault from "../../assets/avatar-default.png";
 
 function getIniciales(nombre) {
     return (nombre || "?").split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
@@ -25,7 +26,10 @@ export default function MedicosAdmin() {
         telefono: "",
         especialidad: "",
         universidad: "",
+        genero: "",
         experiencia: "",
+        horaInicio: "",
+        horaFin: "",
         numeroRegistro: "",
         biografia: ""
     })
@@ -88,7 +92,8 @@ export default function MedicosAdmin() {
             setNuevoMedico({
                 nombre: "", rut: "", email: "", password: "",
                 telefono: "", especialidad: "", universidad: "",
-                experiencia: "", numeroRegistro: "", biografia: ""
+                experiencia: "", horaInicio: "", horaFin: "",
+                genero: "", numeroRegistro: "", biografia: ""
             })
             const res = await axios.get(`http://localhost:8081/usuarios/medicos`)
             setMedicos(res.data)
@@ -212,7 +217,7 @@ export default function MedicosAdmin() {
                                                     <div className="flex items-center gap-3">
                                                         <div className="avatar placeholder">
                                                             <div className="bg-primary/10 text-primary rounded-full w-10">
-                                                                <span className="text-sm font-bold">{getIniciales(medico.nombre)}</span>
+                                                                <img src={AvatarDefault} alt="Avatar usuario" />
                                                             </div>
                                                         </div>
                                                         <div>
@@ -261,7 +266,7 @@ export default function MedicosAdmin() {
                         <div className="flex items-center gap-4 mb-6">
                             <div className="avatar placeholder">
                                 <div className="bg-primary/10 text-primary rounded-full w-16">
-                                    <span className="text-xl font-bold">{getIniciales(medicoSeleccionado.nombre)}</span>
+                                    <img src={AvatarDefault} alt="Avatar usuario" />
                                 </div>
                             </div>
                             <div>
@@ -304,6 +309,10 @@ export default function MedicosAdmin() {
                                 <span>{medicoSeleccionado.genero || "—"}</span>
                             </div>
                             <div className="flex justify-between">
+                                <span className="font-semibold text-base-content/60">Horario de atención</span>
+                                <span>{medicoSeleccionado.horaInicio || "—"} - {medicoSeleccionado.horaFin || "—"}</span>
+                            </div>
+                            <div className="flex justify-between">
                                 <span className="font-semibold text-base-content/60">Experiencia</span>
                                 <span>{medicoSeleccionado.experiencia || "—"}</span>
                             </div>
@@ -313,7 +322,7 @@ export default function MedicosAdmin() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="font-semibold text-base-content/60">Biografía</span>
-                                <span className="text-right">{medicoSeleccionado.biografia || "—"}</span>
+                                <span className="text-right">{medicoSeleccionado.biografia || "Sin información"}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="font-semibold text-base-content/60">Registrado desde</span>
@@ -377,6 +386,22 @@ export default function MedicosAdmin() {
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Universidad</label>
                                 <input className="input input-bordered w-full input-primary" placeholder="Universidad de Chile" value={nuevoMedico.universidad} onChange={(e) => setNuevoMedico({ ...nuevoMedico, universidad: e.target.value })} />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm font-semibold text-base-content/70">Género</label>
+                                <select className="select select-bordered w-full input-primary" value={nuevoMedico.genero} onChange={(e) => setNuevoMedico({ ...nuevoMedico, genero: e.target.value })}>
+                                    <option value="">Selecciona un género</option>
+                                    <option>Masculino</option>
+                                    <option>Femenino</option>
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm font-semibold text-base-content/70">Hora de Inicio</label>
+                                <input className="input input-bordered w-full input-primary" placeholder="09:00" value={nuevoMedico.horaInicio} onChange={(e) => setNuevoMedico({ ...nuevoMedico, horaInicio: e.target.value })} />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm font-semibold text-base-content/70">Hora de Fin</label>
+                                <input className="input input-bordered w-full input-primary" placeholder="18:00" value={nuevoMedico.horaFin} onChange={(e) => setNuevoMedico({ ...nuevoMedico, horaFin: e.target.value })} />
                             </div>
                             <div className="col-span-2 flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Experiencia</label>

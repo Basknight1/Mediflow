@@ -8,7 +8,7 @@ const proximasCitas = [
     tipoconsulta: "Medicina General",
     fecha: "Mar 12 May de 2026",
     hora: "15:00",
-    estado: "Pendiente", 
+    estado: "Pendiente",
   },
   {
     id: 2,
@@ -66,6 +66,7 @@ const estadoBadge = {
   Confirmada: "badge-success",
   Pendiente: "badge-warning",
   Cancelada: "badge-error",
+  Finalizada: "badge-primary"
 };
 
 const pagoBadge = {

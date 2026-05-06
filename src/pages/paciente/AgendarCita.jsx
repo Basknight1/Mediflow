@@ -55,6 +55,10 @@ export default function AgendarCita() {
     const [pasoActual, setPasoActual] = useState(1);
     const [medicoSeleccionado, setMedicoSeleccionado] = useState(null);
     const [medicosReales, setMedicosReales] = useState([]);
+    const [horasOcupadas, setHorasOcupadas] = useState([]);
+    const [fecha, setFecha] = useState("");
+    const [hora, setHora] = useState("");
+    const [motivo, setMotivo] = useState("");
 
 
     // Hacemos la petición de los medicos que hay en el backend
@@ -67,9 +71,36 @@ export default function AgendarCita() {
         }
     }, [especialidadSeleccionada])
 
-    const [fecha, setFecha] = useState("");
-    const [hora, setHora] = useState("");
-    const [motivo, setMotivo] = useState("");
+
+    // UseEffect para poder ver si un médico tiene horas ocupadas en el día.
+    useEffect(() => {
+        if (medicoSeleccionado && fecha) {
+            axios.get(`http://localhost:8082/citas/medico/${medicoSeleccionado.id}/horas-ocupadas?fecha=${fecha}`)
+                .then(res => setHorasOcupadas(res.data))
+                .catch(err => console.error(err))
+        }
+    }, [medicoSeleccionado, fecha])
+
+
+    // Genera las horas disponibles dependiendo de la hora de atención del Médico
+    const generarHorasDisponibles = () => {
+        if (!medicoSeleccionado?.horaInicio || !medicoSeleccionado?.horaFin) return []
+
+        const horas = []
+        const [hInicio, mInicio] = medicoSeleccionado.horaInicio.split(':').map(Number)
+        const [hFin, mFin] = medicoSeleccionado.horaFin.split(':').map(Number)
+
+        let h = hInicio
+        let m = mInicio
+
+        while (h < hFin || (h === hFin && m < mFin)) {
+            const horaStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+            horas.push(horaStr)
+            m += 30
+            if (m >= 60) { m = 0; h++ }
+        }
+        return horas
+    }
 
     return (
         <div className="min-h-screen bg-base-200">
@@ -150,6 +181,7 @@ export default function AgendarCita() {
                                                 <div>
                                                     <p className="font-bold">{medico.nombre}</p>
                                                     <p className="text-sm text-base-content/60">{medico.especialidad}</p>
+                                                    <p className="text-sm text-base-content/60">{medico.horaInicio} - {medico.horaFin}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -172,29 +204,45 @@ export default function AgendarCita() {
                                         type="date"
                                         className="input input-bordered w-full"
                                         value={fecha}
-                                        onChange={(e) => setFecha(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        onChange={(e) => {
+                                            const fechaSeleccionada = e.target.value
+                                            const hoy = new Date().toISOString().split('T')[0]
+                                            if (fechaSeleccionada < hoy) {
+                                                setFecha(hoy)
+                                            } else {
+                                                setFecha(fechaSeleccionada)
+                                            }
+                                        }}
                                     />
                                 </div>
 
                                 <div>
                                     <label className="text-sm font-semibold text-base-content/70 mb-1 block">Hora</label>
-                                    <select
-                                        className="select select-bordered w-full"
-                                        value={hora}
-                                        onChange={(e) => setHora(e.target.value)}
-                                    >
-                                        <option value="">Selecciona una hora</option>
-                                        <option value="09:00">09:00</option>
-                                        <option value="09:30">09:30</option>
-                                        <option value="10:00">10:00</option>
-                                        <option value="10:30">10:30</option>
-                                        <option value="11:00">11:00</option>
-                                        <option value="11:30">11:30</option>
-                                        <option value="15:00">15:00</option>
-                                        <option value="15:30">15:30</option>
-                                        <option value="16:00">16:00</option>
-                                        <option value="16:30">16:30</option>
-                                    </select>
+                                    {!fecha ? (
+                                        <p className="text-sm text-base-content/50">Selecciona una fecha primero</p>
+                                    ) : generarHorasDisponibles().length === 0 ? (
+                                        <p className="text-sm text-base-content/50">Este médico no tiene horario definido</p>
+                                    ) : (
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {generarHorasDisponibles().map((h) => (
+                                                <button
+                                                    key={h}
+                                                    type="button"
+                                                    disabled={horasOcupadas.includes(h)}
+                                                    onClick={() => setHora(h)}
+                                                    className={`btn btn-sm ${horasOcupadas.includes(h)
+                                                        ? 'btn-disabled opacity-40'
+                                                        : hora === h
+                                                            ? 'btn-primary'
+                                                            : 'btn-outline btn-primary'
+                                                        }`}
+                                                >
+                                                    {h}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div>

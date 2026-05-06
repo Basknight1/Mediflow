@@ -16,6 +16,7 @@ const estadoBadge = {
   CONFIRMADA: "badge-success",
   PENDIENTE: "badge-warning",
   CANCELADA: "badge-error",
+  FINALIZADA: "badge-primary",
 };
 
 /* ─── Etiquetas legibles para los estados ─── */
@@ -23,6 +24,7 @@ const estadoLabel = {
   CONFIRMADA: "Confirmada",
   PENDIENTE: "Pendiente",
   CANCELADA: "Cancelada",
+  FINALIZADA: "Finalizada",
 };
 
 /* ─── Formatear fecha legible ─── */

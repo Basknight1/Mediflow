@@ -6,14 +6,16 @@ import { useAuth } from "../../context/AuthContext";
 /* ─── Mapeo estado → clases DaisyUI ─── */
 const estadoBadge = {
   CONFIRMADA: "badge-success",
-  PENDIENTE:  "badge-warning",
-  CANCELADA:  "badge-error",
+  PENDIENTE: "badge-warning",
+  CANCELADA: "badge-error",
+  FINALIZADA: "badge-primary",
 };
 
 const estadoLabel = {
   CONFIRMADA: "Confirmada",
-  PENDIENTE:  "Pendiente",
-  CANCELADA:  "Cancelada",
+  PENDIENTE: "Pendiente",
+  CANCELADA: "Cancelada",
+  FINALIZADA: "Finalizada",
 };
 
 /* ─── Iniciales del nombre para avatar ─── */
@@ -105,10 +107,10 @@ export default function AgendaMedico() {
 
   // Stats del día
   const hoy = new Date().toISOString().split("T")[0];
-  const citasHoy      = citas.filter((c) => c.fecha === hoy);
-  const confirmadas   = citasHoy.filter((c) => c.estado === "CONFIRMADA").length;
-  const pendientes    = citasHoy.filter((c) => c.estado === "PENDIENTE").length;
-  const canceladas    = citasHoy.filter((c) => c.estado === "CANCELADA").length;
+  const citasHoy = citas.filter((c) => c.fecha === hoy);
+  const confirmadas = citasHoy.filter((c) => c.estado === "CONFIRMADA").length;
+  const pendientes = citasHoy.filter((c) => c.estado === "PENDIENTE").length;
+  const canceladas = citasHoy.filter((c) => c.estado === "CANCELADA").length;
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -245,6 +247,17 @@ export default function AgendaMedico() {
                                 className="btn btn-error btn-xs"
                                 onClick={() => cambiarEstado(cita.id, "CANCELADA")}
                               >
+                                Cancelar
+                              </button>
+                            </div>
+                          )}
+                          {/* Acción confirmada */}
+                          {cita.estado === "CONFIRMADA" && (
+                            <div className="flex gap-2 mt-3 justify-end">
+                              <button className="btn btn-neutral btn-xs" onClick={() => cambiarEstado(cita.id, "FINALIZADA")}>
+                                ✓ Finalizar cita
+                              </button>
+                              <button className="btn btn-error btn-xs" onClick={() => cambiarEstado(cita.id, "CANCELADA")}>
                                 Cancelar
                               </button>
                             </div>

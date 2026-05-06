@@ -14,6 +14,10 @@ export default function MiFichaPaciente() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    function imprimirPagina() {
+        window.print();
+    }
+
     useEffect(() => {
         const cargarFicha = async () => {
             if (!usuario?.id) return;
@@ -74,7 +78,14 @@ export default function MiFichaPaciente() {
                             <p><strong>Tipo de sangre:</strong> {ficha.tipoSangre}</p>
 
                         </div>
+
                     </div>
+                    <button
+                        className="btn btn-sm btn-primary transition delay-50 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110 w-24 mt-5"
+                        onClick={imprimirPagina}
+                    >
+                        Imprimir
+                    </button>
                 </div>
             </main>
 

@@ -3,6 +3,7 @@ import Footer from "../../components/Footer";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
+import AvatarDefault from "../../assets/avatar-default.png";
 
 function getIniciales(nombre) {
     return (nombre || "?").split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
@@ -129,7 +130,7 @@ export default function PacientesAdmin() {
                                                     <div className="flex items-center gap-3">
                                                         <div className="avatar placeholder">
                                                             <div className="bg-primary/10 text-primary rounded-full w-10">
-                                                                <span className="text-sm font-bold">{getIniciales(paciente.nombre)}</span>
+                                                                <img src={AvatarDefault} alt="Avatar usuario" />
                                                             </div>
                                                         </div>
                                                         <div>
@@ -177,7 +178,7 @@ export default function PacientesAdmin() {
                         <div className="flex items-center gap-4 mb-6">
                             <div className="avatar placeholder">
                                 <div className="bg-primary/10 text-primary rounded-full w-16">
-                                    <span className="text-xl font-bold">{getIniciales(pacienteSeleccionado.nombre)}</span>
+                                    <img src={AvatarDefault} alt="Avatar usuario" />
                                 </div>
                             </div>
                             <div>
