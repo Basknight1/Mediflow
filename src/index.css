@@ -1,0 +1,117 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+    name: "mediflow";
+    default: true;
+    prefersdark: false;
+    color-scheme: "light";
+
+    /* ── Fondos ── */
+    --color-base-100: oklch(100% 0 0);
+    /* blanco puro — fondo general */
+    --color-base-200: oklch(96% 0.008 240);
+    /* gris muy suave — fondo de tarjetas alternas */
+    --color-base-300: oklch(91% 0.015 220);
+    /* gris azulado — bordes, separadores */
+    --color-base-content: oklch(18% 0.03 240);
+    /* casi negro azulado — texto principal */
+
+    /* ── Primario — azul marino #0F4C81 ── */
+    --color-primary: oklch(35% 0.1 240);
+    --color-primary-content: oklch(100% 0 0);
+
+    /* ── Secundario — teal #2EC4A5 ── */
+    --color-secondary: oklch(72% 0.13 175);
+    --color-secondary-content: oklch(22% 0.07 175);
+
+    /* ── Acento — azul medio #185FA5 ── */
+    --color-accent: oklch(44% 0.11 240);
+    --color-accent-content: oklch(100% 0 0);
+
+    /* ── Neutro — para footer o secciones oscuras ── */
+    --color-neutral: oklch(22% 0.025 240);
+    --color-neutral-content: oklch(100% 0 0);
+
+    /* ── Semánticos ── */
+    --color-info: oklch(44% 0.11 240);
+    --color-info-content: oklch(100% 0 0);
+
+    --color-success: oklch(72% 0.13 175);
+    /* mismo teal — confirmada */
+    --color-success-content: oklch(22% 0.07 175);
+
+    --color-warning: oklch(72% 0.15 60);
+    /* amarillo — pendiente */
+    --color-warning-content: oklch(22% 0.06 55);
+
+    --color-error: oklch(57% 0.21 20);
+    /* rojo — cancelada / error */
+    --color-error-content: oklch(100% 0 0);
+
+    /* ── Forma y borde ── */
+    --radius-selector: 0.4rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.75rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
+/* ── Override: hover de btn-ghost sobre fondo primario ── */
+.navbar .btn-ghost:hover {
+    background-color: oklch(100% 0.00011 271.152 / 0.824);
+    color: inherit;
+}
+
+.navbar .btn-ghost:focus-visible {
+    background-color: oklch(100% 0.00011 271.152 / 0.822);
+}
+
+.toast {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast-enter {
+    animation: slideIn 0.3s ease-out forwards;
+}
+
+.toast-exit {
+    animation: slideOut 0.3s ease-in forwards;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
