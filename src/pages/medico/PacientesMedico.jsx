@@ -5,13 +5,28 @@ import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 
 function getIniciales(nombre) {
-  return (nombre || "?").split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+  return (nombre || "?")
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function formatFecha(fecha) {
+  if (!fecha) return "—";
+  return new Date(`${fecha}T00:00:00`).toLocaleDateString("es-CL");
+}
+
+function formatTipo(tipo) {
+  if (!tipo) return "—";
+  return tipo.charAt(0) + tipo.slice(1).toLowerCase();
 }
 
 export default function PacientesMedico() {
   const { usuario } = useAuth();
   const [busqueda, setBusqueda] = useState("");
-  const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null);
+  const [pacienteDetalle, setPacienteDetalle] = useState(null);
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,29 +38,50 @@ export default function PacientesMedico() {
 
     const cargar = async () => {
       try {
-        // Obtener citas del medico y extraer IDs unicos de pacientes
         const citasRes = await axios.get(`http://localhost:8082/citas/medico/${usuario.id}`);
         const citas = Array.isArray(citasRes.data) ? citasRes.data : [];
-        const pacienteIds = [
-          ...new Set(
-            citas
-              .map((item) => (typeof item === "object" ? item.pacienteId : item))
-              .filter(Boolean)
-          ),
-        ];
+        const citasVigentes = citas.filter((cita) => cita.estado !== "CANCELADA");
+        const citasPorPaciente = new Map();
 
-        // Obtener datos de cada paciente por su ID
+        citasVigentes.forEach((cita) => {
+          const actual = citasPorPaciente.get(cita.pacienteId);
+          const actualFechaHora = actual ? `${actual.fecha}T${actual.hora}` : "";
+          const nuevaFechaHora = `${cita.fecha}T${cita.hora}`;
+          if (!actual || nuevaFechaHora > actualFechaHora) {
+            citasPorPaciente.set(cita.pacienteId, cita);
+          }
+        });
+
+        const pacienteIds = [...citasPorPaciente.keys()];
         const resultados = await Promise.all(
           pacienteIds.map(async (id) => {
             try {
-              const r = await axios.get(`http://localhost:8081/usuarios/${id}`);
-              return r.data;
+              const [pacienteRes, registroRes] = await Promise.all([
+                axios.get(`http://localhost:8081/usuarios/${id}`),
+                axios
+                  .get(`http://localhost:8082/citas/registros-consulta/paciente/${id}/medico/${usuario.id}`)
+                  .catch((err) => {
+                    if (err?.response?.status === 404) return { data: null };
+                    throw err;
+                  }),
+              ]);
+
+              return {
+                ...pacienteRes.data,
+                citaActual: citasPorPaciente.get(id) || null,
+                registroConsulta: registroRes.data,
+              };
             } catch {
               return null;
             }
           })
         );
-        setPacientes(resultados.filter(Boolean));
+
+        setPacientes(
+          resultados
+            .filter(Boolean)
+            .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""))
+        );
       } catch {
         setError("No se pudieron cargar los pacientes.");
       } finally {
@@ -68,7 +104,6 @@ export default function PacientesMedico() {
     <div className="min-h-screen bg-base-200">
       <Navbar />
 
-      {/* HERO */}
       <section className="bg-primary px-6 py-10 sm:px-12 sm:py-12">
         <div className="max-w-5xl mx-auto">
           <span className="badge badge-info text-info-content font-semibold">Médico</span>
@@ -76,21 +111,17 @@ export default function PacientesMedico() {
             Mis Pacientes
           </h1>
           <p className="text-primary-content/70 text-base sm:text-lg">
-            Pacientes que han tenido citas contigo.
+            Revisa la información básica del paciente y el detalle registrado de sus citas finalizadas.
           </p>
         </div>
       </section>
 
-      {/* CONTENIDO */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-
-        {/* Stat */}
         <div className="stat bg-base-100 rounded-lg shadow-sm mb-8 w-fit">
           <div className="stat-title">Total pacientes</div>
           <div className="stat-value text-primary">{pacientes.length}</div>
         </div>
 
-        {/* Búsqueda */}
         <div className="card bg-base-100 shadow-sm mb-6">
           <div className="card-body py-4">
             <label className="input input-bordered flex items-center gap-2">
@@ -108,7 +139,6 @@ export default function PacientesMedico() {
           </div>
         </div>
 
-        {/* Estados */}
         {loading && (
           <div className="flex justify-center py-8">
             <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -121,7 +151,6 @@ export default function PacientesMedico() {
           </div>
         )}
 
-        {/* Lista */}
         {!loading && !error && (
           <div className="card bg-base-100 shadow-sm">
             <div className="card-body p-0">
@@ -130,9 +159,10 @@ export default function PacientesMedico() {
                   <thead>
                     <tr className="bg-base-200">
                       <th>Paciente</th>
+                      <th>Última cita</th>
                       <th>Email</th>
                       <th>Teléfono</th>
-                      <th>Acciones</th>
+                      <th>Detalle</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -148,18 +178,29 @@ export default function PacientesMedico() {
                             <div>
                               <div className="font-bold">{paciente.nombre}</div>
                               <div className="text-sm opacity-50">{paciente.rut}</div>
+                              {paciente.registroConsulta && (
+                                <button
+                                  className="link link-primary text-sm mt-1"
+                                  onClick={() => setPacienteDetalle(paciente)}
+                                >
+                                  Ver detalles
+                                </button>
+                              )}
                             </div>
                           </div>
                         </td>
+                        <td className="text-sm">
+                          <div className="font-medium">{formatFecha(paciente.citaActual?.fecha)}</div>
+                          <div className="opacity-60">{formatTipo(paciente.citaActual?.tipo)}</div>
+                        </td>
                         <td className="text-sm">{paciente.email}</td>
                         <td className="text-sm">{paciente.telefono || "—"}</td>
-                        <td>
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => setPacienteSeleccionado(paciente)}
-                          >
-                            Ver detalle
-                          </button>
+                        <td className="text-sm">
+                          {paciente.registroConsulta ? (
+                            <span className="badge badge-success badge-outline">Disponible</span>
+                          ) : (
+                            <span className="badge badge-ghost">Sin registro</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -179,52 +220,61 @@ export default function PacientesMedico() {
         )}
       </main>
 
-      {/* Modal detalle */}
-      {pacienteSeleccionado && (
+      {pacienteDetalle?.registroConsulta && (
         <div className="modal modal-open">
-          <div className="modal-box max-w-md">
-            <h3 className="font-bold text-lg mb-4">Ficha del Paciente</h3>
+          <div className="modal-box max-w-2xl">
+            <h3 className="font-bold text-xl mb-4">Detalle del Registro</h3>
 
             <div className="flex items-center gap-4 mb-6">
               <div className="avatar placeholder">
                 <div className="bg-primary/10 text-primary rounded-full w-16">
-                  <span className="text-xl font-bold">{getIniciales(pacienteSeleccionado.nombre)}</span>
+                  <span className="text-xl font-bold">{getIniciales(pacienteDetalle.nombre)}</span>
                 </div>
               </div>
               <div>
-                <h4 className="font-bold text-lg">{pacienteSeleccionado.nombre}</h4>
-                <p className="text-sm text-base-content/60">{pacienteSeleccionado.rol}</p>
+                <h4 className="font-bold text-lg">{pacienteDetalle.nombre}</h4>
+                <p className="text-sm text-base-content/60">{pacienteDetalle.email}</p>
+                <p className="text-sm text-base-content/60">{pacienteDetalle.telefono || "Sin teléfono"}</p>
               </div>
             </div>
 
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="font-semibold text-base-content/60">RUT</span>
-                <span>{pacienteSeleccionado.rut || "—"}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+              <div className="bg-base-200 rounded-xl p-4">
+                <p className="text-sm text-base-content/60 mb-1">Fecha de la cita</p>
+                <p className="font-semibold">{formatFecha(pacienteDetalle.registroConsulta.fechaCita)}</p>
               </div>
-              <div className="flex justify-between">
-                <span className="font-semibold text-base-content/60">Email</span>
-                <span>{pacienteSeleccionado.email}</span>
+              <div className="bg-base-200 rounded-xl p-4">
+                <p className="text-sm text-base-content/60 mb-1">Tipo de cita</p>
+                <p className="font-semibold">{formatTipo(pacienteDetalle.registroConsulta.tipoCita)}</p>
               </div>
-              <div className="flex justify-between">
-                <span className="font-semibold text-base-content/60">Teléfono</span>
-                <span>{pacienteSeleccionado.telefono || "—"}</span>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-base-200 rounded-xl p-4">
+                <p className="text-sm text-base-content/60 mb-1">Motivo de consulta</p>
+                <p>{pacienteDetalle.registroConsulta.motivoConsulta || "Sin motivo registrado"}</p>
               </div>
-              <div className="flex justify-between">
-                <span className="font-semibold text-base-content/60">Registrado desde</span>
-                <span>
-                  {pacienteSeleccionado.createdAt
-                    ? new Date(pacienteSeleccionado.createdAt).toLocaleDateString()
-                    : "—"}
-                </span>
+              <div className="bg-base-200 rounded-xl p-4">
+                <p className="text-sm text-base-content/60 mb-1">Observaciones</p>
+                <p>{pacienteDetalle.registroConsulta.observaciones || "Sin observaciones"}</p>
+              </div>
+              <div className="bg-base-200 rounded-xl p-4">
+                <p className="text-sm text-base-content/60 mb-1">Diagnóstico o resumen</p>
+                <p>{pacienteDetalle.registroConsulta.diagnostico || "Sin diagnóstico"}</p>
+              </div>
+              <div className="bg-base-200 rounded-xl p-4">
+                <p className="text-sm text-base-content/60 mb-1">Indicaciones</p>
+                <p>{pacienteDetalle.registroConsulta.indicaciones || "Sin indicaciones"}</p>
               </div>
             </div>
 
             <div className="modal-action">
-              <button className="btn btn-ghost" onClick={() => setPacienteSeleccionado(null)}>Cerrar</button>
+              <button className="btn btn-ghost" onClick={() => setPacienteDetalle(null)}>
+                Cerrar
+              </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => setPacienteSeleccionado(null)}></div>
+          <div className="modal-backdrop" onClick={() => setPacienteDetalle(null)}></div>
         </div>
       )}
 

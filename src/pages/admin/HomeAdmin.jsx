@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 
 /* Datos de ejemplo de Próximas citas */
@@ -75,6 +76,8 @@ const pagoBadge = {
 };
 
 export default function HomeAdmin() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-base-200">
       <Navbar />
@@ -95,10 +98,16 @@ export default function HomeAdmin() {
           </p>
 
           <div className="flex flex-wrap gap-3">
-            <button className="btn btn-outline text-primary-content border-primary-content hover:bg-primary-content hover:text-primary">
+            <button
+              className="btn btn-outline text-primary-content border-primary-content hover:bg-primary-content hover:text-primary"
+              onClick={() => navigate("/admin/pacientes")}
+            >
               Gestionar pacientes
             </button>
-            <button className="btn btn-outline text-primary-content border-primary-content hover:bg-primary-content hover:text-primary">
+            <button
+              className="btn btn-outline text-primary-content border-primary-content hover:bg-primary-content hover:text-primary"
+              onClick={() => navigate("/admin/reportes")}
+            >
               Ver reportes
             </button>
           </div>

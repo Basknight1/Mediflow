@@ -14,6 +14,7 @@ import HomeAdmin from './pages/admin/HomeAdmin'
 import PacientesAdmin from './pages/admin/PacientesAdmin'
 import MedicosAdmin from './pages/admin/MedicosAdmin'
 import CitasYPagosAdmin from './pages/admin/CitasYPagosAdmin'
+import ReportesAdmin from './pages/admin/ReportesAdmin'
 
 function App() {
   return (
@@ -41,6 +42,12 @@ function App() {
       <Route path="/admin/citas-pagos" element={
         <ProtectedRoute rolRequerido="ADMINISTRADOR">
           <CitasYPagosAdmin />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/reportes" element={
+        <ProtectedRoute rolRequerido="ADMINISTRADOR">
+          <ReportesAdmin />
         </ProtectedRoute>
       } />
 
