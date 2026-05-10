@@ -5,16 +5,6 @@ import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
 import AvatarDefault from "../../assets/avatar-default.png"
 
-const HARDCODEADOS = {
-    foto: "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp",
-    genero: "Masculino",             // HARDCODEADO
-    direccion: "Av. Libertador 1234, Dpto 56", // HARDCODEADO
-    ciudad: "Santiago",              // HARDCODEADO
-    region: "Región Metropolitana", // HARDCODEADO
-    contactoEmergencia: "María González",   // HARDCODEADO
-    telefonoEmergencia: "+56 9 8765 4321",  // HARDCODEADO
-};
-
 export default function MiPerfilPaciente() {
     const { usuario, logout } = useAuth();
 
@@ -47,12 +37,6 @@ export default function MiPerfilPaciente() {
         setPerfilTemp({ ...perfilTemp, [e.target.name]: e.target.value });
     };
 
-    const handleFotoChange = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setPerfilTemp({ ...perfilTemp, foto: URL.createObjectURL(file) });
-    };
-
     const handleGuardar = () => {
         setPerfil(perfilTemp);
         setEditando(false);
@@ -68,6 +52,8 @@ export default function MiPerfilPaciente() {
     if (!perfil) return null;
 
     const val = (key) => (editando ? perfilTemp[key] : perfil[key]);
+    const esCampoEditable = (name) =>
+        editando && ["direccion", "contactoEmergencia", "telefonoEmergencia"].includes(name);
 
     return (
         <div className="min-h-screen bg-base-200">
@@ -89,7 +75,7 @@ export default function MiPerfilPaciente() {
             </section>
 
             <main className="max-w-4xl mx-auto px-4 py-8">
-                {/* Cabecera con foto — FOTO: HARDCODEADO */}
+                {/* Cabecera con foto */}
                 <div className="bg-base-100 rounded-box shadow-sm p-6 mb-6">
                     <div className="flex flex-col sm:flex-row items-center gap-6">
                         <div className="relative">
@@ -98,12 +84,6 @@ export default function MiPerfilPaciente() {
                                     <img src={AvatarDefault} alt="Avatar usuario" />
                                 </div>
                             </div>
-                            {editando && (
-                                <label className="btn btn-primary btn-circle btn-sm absolute bottom-0 right-0 cursor-pointer shadow-md">
-                                    📷
-                                    <input type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
-                                </label>
-                            )}
                         </div>
 
                         <div className="flex-1 text-center sm:text-left">
@@ -115,7 +95,7 @@ export default function MiPerfilPaciente() {
                         <div className="flex flex-col gap-2 w-full sm:w-auto">
                             {!editando ? (
                                 <button className="btn btn-primary" onClick={() => setEditando(true)}>
-                                    ✏️ Editar perfil
+                                    Editar perfil
                                 </button>
                             ) : (
                                 <>
@@ -129,37 +109,41 @@ export default function MiPerfilPaciente() {
 
                 {/* Datos Personales */}
                 <div className="bg-base-100 rounded-box shadow-sm p-6 mb-6">
-                    <h3 className="text-lg font-bold mb-4">👤 Datos Personales</h3>
+                    <h3 className="text-lg font-bold mb-4">Datos Personales</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Campo label="Nombre completo" name="nombre" value={val("nombre")} editando={editando} onChange={handleChange} />
-                        <Campo label="RUT" name="rut" value={val("rut")} editando={editando} onChange={handleChange} />
-                        <Campo label="Fecha de Nacimiento" name="fechaNacimiento" value={val("fechaNacimiento")} editando={editando} onChange={handleChange} />
-                        <Campo label="Género (HARDCODEADO)" name="genero" value={val("genero")} editando={editando} onChange={handleChange} />
-                        <Campo label="Teléfono" name="telefono" value={val("telefono")} editando={editando} onChange={handleChange} />
-                        <Campo label="Email" name="email" value={val("email")} editando={editando} onChange={handleChange} />
-                        <Campo label="Dirección (HARDCODEADO)" name="direccion" value={val("direccion")} editando={editando} onChange={handleChange} />
-                        <Campo label="Ciudad (HARDCODEADO)" name="ciudad" value={val("ciudad")} editando={editando} onChange={handleChange} />
-                        <Campo label="Región (HARDCODEADO)" name="region" value={val("region")} editando={editando} onChange={handleChange} />
+                        <Campo label="Nombre completo" name="nombre" value={val("nombre")} editando={esCampoEditable("nombre")} onChange={handleChange} />
+                        <Campo label="RUT" name="rut" value={val("rut")} editando={esCampoEditable("rut")} onChange={handleChange} />
+                        <Campo
+                            label="Fecha de Nacimiento"
+                            name="fechaNacimiento"
+                            value={val("fechaNacimiento")?.split('-').reverse().join('/') || "—"}
+                            editando={esCampoEditable("fechaNacimiento")}
+                            onChange={handleChange}
+                        />
+                        <Campo label="Género" name="genero" value={val("genero")} editando={esCampoEditable("genero")} onChange={handleChange} />
+                        <Campo label="Teléfono" name="telefono" value={val("telefono")} editando={esCampoEditable("telefono")} onChange={handleChange} />
+                        <Campo label="Email" name="email" value={val("email")} editando={esCampoEditable("email")} onChange={handleChange} />
+                        <Campo label="Dirección" name="direccion" value={val("direccion")} editando={esCampoEditable("direccion")} onChange={handleChange} />
                     </div>
                 </div>
 
                 {/* Información Médica */}
                 <div className="bg-base-100 rounded-box shadow-sm p-6 mb-6">
-                    <h3 className="text-lg font-bold mb-4">🩺 Información Médica</h3>
+                    <h3 className="text-lg font-bold mb-4">Información Médica</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Campo label="Previsión" name="prevision" value={val("prevision")} editando={editando} onChange={handleChange} />
-                        <Campo label="Tipo de Sangre" name="tipoSangre" value={val("tipoSangre")} editando={editando} onChange={handleChange} />
-                        <Campo label="Alergias" name="alergias" value={val("alergias")} editando={editando} onChange={handleChange} />
-                        <Campo label="Enfermedades Crónicas" name="enfermedadesCronicas" value={val("enfermedadesCronicas")} editando={editando} onChange={handleChange} />
+                        <Campo label="Previsión" name="prevision" value={val("prevision")} editando={esCampoEditable("prevision")} onChange={handleChange} />
+                        <Campo label="Tipo de Sangre" name="tipoSangre" value={val("tipoSangre")} editando={esCampoEditable("tipoSangre")} onChange={handleChange} />
+                        <Campo label="Alergias" name="alergias" value={val("alergias") || "Ninguna alergia"} editando={esCampoEditable("alergias")} onChange={handleChange} />
+                        <Campo label="Enfermedades Crónicas" name="enfermedadesCronicas" value={val("enfermedadesCronicas") || "Ninguna enfermedad crónica"} editando={esCampoEditable("enfermedadesCronicas")} onChange={handleChange} />
                     </div>
                 </div>
 
-                {/* Contacto de Emergencia — HARDCODEADO */}
+                {/* Contacto de Emergencia */}
                 <div className="bg-base-100 rounded-box shadow-sm p-6 mb-6">
-                    <h3 className="text-lg font-bold mb-4">🚨 Contacto de Emergencia (HARDCODEADO)</h3>
+                    <h3 className="text-lg font-bold mb-4">Contacto de Emergencia</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Campo label="Nombre" name="contactoEmergencia" value={val("contactoEmergencia")} editando={editando} onChange={handleChange} />
-                        <Campo label="Teléfono" name="telefonoEmergencia" value={val("telefonoEmergencia")} editando={editando} onChange={handleChange} />
+                        <Campo label="Nombre" name="contactoEmergencia" value={val("contactoEmergencia")} editando={esCampoEditable("contactoEmergencia")} onChange={handleChange} />
+                        <Campo label="Teléfono" name="telefonoEmergencia" value={val("telefonoEmergencia")} editando={esCampoEditable("telefonoEmergencia")} onChange={handleChange} />
                     </div>
                 </div>
 

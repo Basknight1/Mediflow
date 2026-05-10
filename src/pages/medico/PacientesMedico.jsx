@@ -3,6 +3,7 @@ import Footer from "../../components/Footer";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
+import AvatarDefault from "../../assets/avatar-default.png"
 
 function getIniciales(nombre) {
   return (nombre || "?")
@@ -118,8 +119,8 @@ export default function PacientesMedico() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="stat bg-base-100 rounded-lg shadow-sm mb-8 w-fit">
-          <div className="stat-title">Total pacientes</div>
-          <div className="stat-value text-primary">{pacientes.length}</div>
+          <div className="stat-title">Total de pacientes</div>
+          <div className="stat-value text-primary text-center">{pacientes.length}</div>
         </div>
 
         <div className="card bg-base-100 shadow-sm mb-6">
@@ -172,7 +173,7 @@ export default function PacientesMedico() {
                           <div className="flex items-center gap-3">
                             <div className="avatar placeholder">
                               <div className="bg-primary/10 text-primary rounded-full w-10">
-                                <span className="text-sm font-bold">{getIniciales(paciente.nombre)}</span>
+                                <img src={AvatarDefault} alt="Avatar usuario" />
                               </div>
                             </div>
                             <div>

@@ -18,6 +18,7 @@ export default function MedicosAdmin() {
     const [error, setError] = useState(null);
     const [modalRegistrar, setModalRegistrar] = useState(false);
     const [alerta, setAlerta] = useState(null);
+    const [erroresFormMedico, setErroresFormMedico] = useState({});
     const [nuevoMedico, setNuevoMedico] = useState({
         nombre: "",
         rut: "",
@@ -79,7 +80,33 @@ export default function MedicosAdmin() {
         );
     });
 
+    const validarFormMedico = () => {
+        const errores = {}
+        if (!nuevoMedico.nombre.trim()) errores.nombre = "El nombre es obligatorio"
+        if (!nuevoMedico.rut.trim()) errores.rut = "El RUT es obligatorio"
+        else if (!/^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/.test(nuevoMedico.rut)) errores.rut = "Formato inválido. Ejemplo: 12.345.678-9"
+        if (!nuevoMedico.email.trim()) errores.email = "El email es obligatorio"
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nuevoMedico.email)) errores.email = "Email inválido"
+        if (!nuevoMedico.password.trim()) errores.password = "La contraseña es obligatoria"
+        else if (nuevoMedico.password.length < 6) errores.password = "Mínimo 6 caracteres"
+        if (!nuevoMedico.telefono.trim()) errores.telefono = "El número de teléfono es obligatorio"
+        else if (nuevoMedico.telefono.length < 9 || nuevoMedico.telefono.length > 9) errores.telefono = "Mínimo o máximo 9 caracteres"
+        if (!nuevoMedico.especialidad) errores.especialidad = "Selecciona una especialidad"
+        if (!nuevoMedico.universidad.trim()) errores.universidad = "La universidad es obligatoria"
+        if (!nuevoMedico.genero) errores.genero = "Selecciona un género"
+        if (!nuevoMedico.experiencia.trim()) errores.experiencia = "La experiencia es obligatoria"
+        else if (nuevoMedico.experiencia.trim().length < 20) errores.experiencia = "Mínimo 20 caracteres"
+        if (!nuevoMedico.horaInicio) errores.horaInicio = "La hora de inicio es obligatoria"
+        else if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(nuevoMedico.horaInicio)) errores.horaInicio = "Formato inválido. Ejemplo: 09:00"
+        if (!nuevoMedico.horaFin) errores.horaFin = "La hora de fin es obligatoria"
+        else if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(nuevoMedico.horaFin)) errores.horaFin = "Formato inválido. Ejemplo: 18:00"
+        setErroresFormMedico(errores)
+        return Object.keys(errores).length === 0
+    }
+
     const registrarMedico = async () => {
+        if (!validarFormMedico()) return
+
         try {
             const numeroRegistroAuto = `MED-${Date.now().toString().slice(-5)}`
             await axios.post("http://localhost:8081/usuarios/register", {
@@ -99,8 +126,8 @@ export default function MedicosAdmin() {
             setMedicos(res.data)
 
         } catch (error) {
-            alert("Error al registrar el médico")
-            console.log(error)
+            const mensaje = error?.response?.data || "Error al registrar el médico"
+            mostrarAlerta("error", mensaje)
         }
     }
 
@@ -123,7 +150,7 @@ export default function MedicosAdmin() {
 
             {/* Alerta notificación */}
             {alerta && (
-                <div className={`toast toast-end toast-bottom z-50 ${alerta.saliendo ? "toast-exit" : "toast-enter"}`}>
+                <div className={`toast toast-end toast-bottom z-9999 ${alerta.saliendo ? "toast-exit" : "toast-enter"}`}>
                     <div className={`alert shadow-lg`}>
                         <span>{alerta.mensaje}</span>
                     </div>
@@ -354,22 +381,28 @@ export default function MedicosAdmin() {
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Nombre completo</label>
                                 <input className="input input-bordered w-full input-primary" placeholder="Dr. Juan Pérez" value={nuevoMedico.nombre} onChange={(e) => setNuevoMedico({ ...nuevoMedico, nombre: e.target.value })} />
+                                {erroresFormMedico.nombre && <span className="text-xs text-error">{erroresFormMedico.nombre}</span>}
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">RUT</label>
                                 <input className="input input-bordered w-full input-primary" placeholder="12.345.678-9" value={nuevoMedico.rut} onChange={(e) => setNuevoMedico({ ...nuevoMedico, rut: e.target.value })} />
+                                {erroresFormMedico.rut && <span className="text-xs text-error">{erroresFormMedico.rut}</span>}
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Email</label>
                                 <input className="input input-bordered w-full input-primary" placeholder="doctor@mediflow.com" value={nuevoMedico.email} onChange={(e) => setNuevoMedico({ ...nuevoMedico, email: e.target.value })} />
+                                {erroresFormMedico.email && <span className="text-xs text-error">{erroresFormMedico.email}</span>}
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Contraseña</label>
                                 <input className="input input-bordered w-full input-primary" type="password" placeholder="••••••••" value={nuevoMedico.password} onChange={(e) => setNuevoMedico({ ...nuevoMedico, password: e.target.value })} />
+                                {erroresFormMedico.password && <span className="text-xs text-error">{erroresFormMedico.password}</span>}
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Teléfono</label>
                                 <input className="input input-bordered w-full input-primary" placeholder="912345678" value={nuevoMedico.telefono} onChange={(e) => setNuevoMedico({ ...nuevoMedico, telefono: e.target.value })} />
+                                {erroresFormMedico.telefono && <span className="text-xs text-error">{erroresFormMedico.telefono}</span>}
+
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Especialidad</label>
@@ -382,10 +415,13 @@ export default function MedicosAdmin() {
                                     <option>Traumatología</option>
                                     <option>Neurología</option>
                                 </select>
+                                {erroresFormMedico.especialidad && <span className="text-xs text-error">{erroresFormMedico.especialidad}</span>}
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Universidad</label>
                                 <input className="input input-bordered w-full input-primary" placeholder="Universidad de Chile" value={nuevoMedico.universidad} onChange={(e) => setNuevoMedico({ ...nuevoMedico, universidad: e.target.value })} />
+                                {erroresFormMedico.universidad && <span className="text-xs text-error">{erroresFormMedico.universidad}</span>}
+
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Género</label>
@@ -394,18 +430,23 @@ export default function MedicosAdmin() {
                                     <option>Masculino</option>
                                     <option>Femenino</option>
                                 </select>
+                                {erroresFormMedico.genero && <span className="text-xs text-error">{erroresFormMedico.genero}</span>}
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Hora de Inicio</label>
                                 <input className="input input-bordered w-full input-primary" placeholder="09:00" value={nuevoMedico.horaInicio} onChange={(e) => setNuevoMedico({ ...nuevoMedico, horaInicio: e.target.value })} />
+                                {erroresFormMedico.horaInicio && <span className="text-xs text-error">{erroresFormMedico.horaInicio}</span>}
+
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Hora de Fin</label>
                                 <input className="input input-bordered w-full input-primary" placeholder="18:00" value={nuevoMedico.horaFin} onChange={(e) => setNuevoMedico({ ...nuevoMedico, horaFin: e.target.value })} />
+                                {erroresFormMedico.horaFin && <span className="text-xs text-error">{erroresFormMedico.horaFin}</span>}
                             </div>
                             <div className="col-span-2 flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Experiencia</label>
                                 <input className="input input-bordered w-full input-primary" placeholder="10 años en cardiología clínica" value={nuevoMedico.experiencia} onChange={(e) => setNuevoMedico({ ...nuevoMedico, experiencia: e.target.value })} />
+                                {erroresFormMedico.experiencia && <span className="text-xs text-error">{erroresFormMedico.experiencia}</span>}
                             </div>
                             <div className="col-span-2 flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-base-content/70">Biografía</label>

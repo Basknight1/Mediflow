@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 /* Datos de ejemplo de Próximas citas */
 const proximasCitas = [
@@ -54,16 +56,14 @@ const pagosPacientes = [
     fecha: "Mie 28 Ene de 2026",
   },
 ];
-
-/* Accesos rápidos */
-const accesosRapidos = [
-  { label: "Citas hoy", cantidad: "18", emoji: "📋" },
-  { label: "Pacientes activos", cantidad: "142", emoji: "👥" },
-  { label: "Pagos pendientes", cantidad: "5", emoji: "📄" },
-  { label: "Médicos activos", cantidad: "7", emoji: "👤" },
-];
-
 const estadoBadge = {
+  Confirmada: "badge-success",
+  Pendiente: "badge-warning",
+  Cancelada: "badge-error",
+  Finalizada: "badge-primary"
+};
+
+const estadoLabel = {
   Confirmada: "badge-success",
   Pendiente: "badge-warning",
   Cancelada: "badge-error",
@@ -77,6 +77,66 @@ const pagoBadge = {
 
 export default function HomeAdmin() {
   const navigate = useNavigate();
+
+  const [citas, setCitas] = useState([])
+  const [pacientes, setPacientes] = useState([])
+  const [medicos, setMedicos] = useState([])
+  const [pagos, setPagos] = useState([])
+  const [usuarios, setUsuarios] = useState({})
+  const [loading, setLoading] = useState(true)
+
+  const formatearEstado = (estado) => {
+    const estados = {
+      CONFIRMADA: "Confirmada",
+      PENDIENTE: "Pendiente",
+      CANCELADA: "Cancelada",
+      FINALIZADA: "Finalizada",
+    }
+    return estados[estado] || estado
+  }
+
+  const formatearTipo = (tipo) => {
+    const tipos = {
+      GENERAL: "General",
+      ESPECIALIDAD: "Especialidad",
+      URGENCIA: "Urgencia"
+    }
+    return tipos[tipo] || tipo
+  }
+
+  // UseEffect que carga todos los datos de los microservicios más importantes.
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        const [citasRes, pacientesRes, medicosRes, pagosRes] = await Promise.all([
+          axios.get(`http://localhost:8082/citas`),
+          axios.get(`http://localhost:8081/usuarios/pacientes`),
+          axios.get(`http://localhost:8081/usuarios/medicos`),
+          axios.get(`http://localhost:8083/pagos`)
+        ])
+        setCitas(Array.isArray(citasRes.data) ? citasRes.data : [])
+        setPacientes(Array.isArray(pacientesRes.data) ? pacientesRes.data : [])
+        setMedicos(Array.isArray(medicosRes.data) ? medicosRes.data : [])
+        setPagos(Array.isArray(pagosRes.data) ? pagosRes.data : [])
+
+        const mapa = {}
+        pacientesRes.data.forEach(u => mapa[u.id] = u.nombre)
+        medicosRes.data.forEach(u => mapa[u.id] = u.nombre)
+        setUsuarios(mapa)
+      } catch (err) {
+        console.error("Error al cargar datos", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    cargar()
+  }, [])
+
+  /* Accesos rápidos */
+  const hoy = new Date().toISOString().split("T")[0]
+  const citasHoy = citas.filter(c => c.fecha === hoy).length
+  const pagosPendientes = pagos.filter(p => p.estado === "PENDIENTE").length
+
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -94,7 +154,7 @@ export default function HomeAdmin() {
           </h1>
 
           <p className="text-primary-content/70 text-base sm:text-lg mb-8">
-            Resumen operacional del día de hoy.
+            Resumen operacional del día de hoy {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}.
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -119,21 +179,17 @@ export default function HomeAdmin() {
 
         {/* ── Accesos Rápidos ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          {accesosRapidos.map((item) => (
-            <div
-              key={item.label}
-              className="card bg-base-100 shadow-sm cursor-pointer
-                         hover:shadow-md hover:-translate-y-0.5
-                         transition-all duration-200 min-h-[150px]"
-            >
+          {[
+            { label: "Citas hoy", cantidad: citasHoy, emoji: "📋" },
+            { label: "Pacientes activos", cantidad: pacientes.length, emoji: "👥" },
+            { label: "Pagos pendientes", cantidad: pagosPendientes, emoji: "📄" },
+            { label: "Médicos activos", cantidad: medicos.length, emoji: "👤" },
+          ].map((item) => (
+            <div key={item.label} className="card bg-base-100 shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 min-h-[150px]">
               <div className="card-body items-center text-center p-4">
                 <span className="text-2xl">{item.emoji}</span>
-                <span className="text-sm font-semibold text-base-content">
-                  {item.label}
-                </span>
-                <span className="text-2xl font-bold text-base-content mt-2">
-                  {item.cantidad}
-                </span>
+                <span className="text-sm font-semibold text-base-content">{item.label}</span>
+                <span className="text-2xl font-bold text-base-content mt-2">{item.cantidad}</span>
               </div>
             </div>
           ))}
@@ -149,36 +205,24 @@ export default function HomeAdmin() {
             </h2>
 
             <div className="flex flex-col gap-3">
-              {proximasCitas.map((cita) => (
-                <div
-                  key={cita.id}
-                  className="card bg-base-100 shadow-sm
-                             hover:shadow-md
-                             transition-shadow duration-200"
-                >
+              {citas.slice(-5).reverse().map((cita) => (
+                <div key={cita.id} className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                   <div className="card-body p-4 sm:p-5 flex-row items-center gap-4">
-                    {/* Icono */}
                     <div className="bg-base-200 rounded-xl w-12 h-12 flex items-center justify-center shrink-0">
                       <span className="text-xl">🧑🏻‍⚕️</span>
                     </div>
-
-                    {/* Info del paciente */}
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-base-content truncate">
-                        {cita.paciente}
+                        {usuarios[cita.pacienteId] || `Paciente #${cita.pacienteId}`} → {usuarios[cita.medicoId] || `Médico #${cita.medicoId}`}
                       </p>
-                      <p className="text-sm text-base-content/60">
-                        {cita.tipoconsulta}
-                      </p>
+                      <p className="text-sm text-base-content/60">{formatearTipo(cita.tipo)}</p>
                     </div>
-
-                    {/* Fecha + Badge */}
                     <div className="text-right shrink-0 flex flex-col items-end gap-1">
                       <span className="text-xs text-base-content/60">
-                        {cita.fecha} · {cita.hora}
+                        {cita.fecha?.split('-').reverse().join('/')} · {cita.hora?.substring(0, 5)}
                       </span>
-                      <span className={`badge badge-sm ${estadoBadge[cita.estado]}`}>
-                        {cita.estado}
+                      <span className={`badge badge-sm ${estadoBadge[formatearEstado(cita.estado)]}`}>
+                        {formatearEstado(cita.estado)}
                       </span>
                     </div>
                   </div>
@@ -194,36 +238,31 @@ export default function HomeAdmin() {
             </h2>
 
             <div className="flex flex-col gap-3">
-              {pagosPacientes.map((pago) => (
-                <div
-                  key={pago.id}
-                  className="card bg-base-100 shadow-sm
-                             hover:shadow-md
-                             transition-shadow duration-200"
-                >
+              {pagos.slice(-5).reverse().map((pago) => (
+                <div key={pago.id} className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                   <div className="card-body p-4 sm:p-5 flex-row items-center gap-4">
-                    {/* Icono */}
                     <div className="bg-base-200 rounded-xl w-12 h-12 flex items-center justify-center shrink-0">
+
                       <span className="text-xl">💰</span>
                     </div>
-
-                    {/* Info del paciente */}
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-base-content truncate">
-                        {pago.paciente}
+                        {usuarios[pago.pacienteId] || `Paciente #${pago.pacienteId}`}
                       </p>
+                      <p className="text-sm font-semibold">
+                        {usuarios[pago.medicoId] || `Médico #${pago.medicoId}`}
+                      </p>
+                      <p className="text-sm text-base-content/60" >{pago.numeroBoleta}</p>
                       <p className="text-sm font-semibold text-base-content">
-                        {pago.monto}
+                        ${pago.monto?.toLocaleString('es-CL')}
                       </p>
                     </div>
-
-                    {/* Fecha + Badge */}
                     <div className="text-right shrink-0 flex flex-col items-end gap-1">
                       <span className="text-xs text-base-content/60">
-                        {pago.fecha}
+                        {pago.fechaCreacion?.split('-').reverse().join('/')}
                       </span>
-                      <span className={`badge badge-sm ${pagoBadge[pago.estado]}`}>
-                        {pago.estado}
+                      <span className={`badge badge-sm ${pago.estado === 'PAGADO' ? 'badge-success' : 'badge-warning'}`}>
+                        {pago.estado === 'PAGADO' ? 'Pagado' : 'Pendiente'}
                       </span>
                     </div>
                   </div>

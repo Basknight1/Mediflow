@@ -1,8 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
+
+// Espera unos segundos para mostrar la animación de carga al crear una cita.
+function esperarAnim() {
+    return new Promise((resolve) => {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => resolve())
+        })
+    })
+}
+
+function IconoCarga({ className }) {
+    return (
+        <svg
+            className={`animate-spin ${className ?? ""}`}
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            aria-hidden
+        >
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+        </svg>
+    )
+}
 
 const especialidades = [
     { id: 1, nombre: "Medicina General", icono: "💊" },
@@ -19,6 +50,17 @@ export default function AgendarCita() {
     const { usuario } = useAuth()
     const navigate = useNavigate()
 
+    const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState(null);
+    const [pasoActual, setPasoActual] = useState(1);
+    const [medicoSeleccionado, setMedicoSeleccionado] = useState(null);
+    const [medicosReales, setMedicosReales] = useState([]);
+    const [horasOcupadas, setHorasOcupadas] = useState([]);
+    const [fecha, setFecha] = useState("");
+    const [hora, setHora] = useState("");
+    const [motivo, setMotivo] = useState("");
+    const [agendando, setAgendando] = useState(false);
+    const envioEnCursoRef = useRef(false);
+
     // Obtenemos el Tipo de Cita que se eligió al agendar y 
     // asignamos para que se guarde el tipo correcto en el backend.
     const obtenerTipoCita = (nombreEspecialidad) => {
@@ -32,33 +74,35 @@ export default function AgendarCita() {
 
     // Hacemos la comunicación con el backend y le insertamos los datos
     // que uno elige en el frontend para ponerlos en el backend Citas.
-    const confirmarCita = async () => {
-        try {
-            await axios.post("http://localhost:8082/citas", {
-                pacienteId: usuario.id,
-                medicoId: medicoSeleccionado.id,
-                fecha: fecha,
-                hora: hora,
-                tipo: obtenerTipoCita(especialidadSeleccionada?.nombre),
-                motivo: motivo
-            })
-            alert("¡Cita agendada correctamente!")
-            navigate("/paciente")
+    const confirmarCita = () => {
+        if (envioEnCursoRef.current) return
+        envioEnCursoRef.current = true
+        flushSync(() => {
+            setAgendando(true)
+        })
 
-        } catch (error) {
-            console.error("Error al agendar la cita:", error)
-            alert("Error al agendar la cita")
-        }
+        void (async () => {
+            try {
+                await esperarAnim()
+                await axios.post("http://localhost:8082/citas", {
+                    pacienteId: usuario.id,
+                    medicoId: medicoSeleccionado.id,
+                    fecha: fecha,
+                    hora: hora,
+                    tipo: obtenerTipoCita(especialidadSeleccionada?.nombre),
+                    motivo: motivo
+                })
+                alert("¡Cita agendada correctamente!")
+                navigate("/paciente")
+            } catch (error) {
+                console.error("Error al agendar la cita:", error)
+                alert("Error al agendar la cita")
+            } finally {
+                envioEnCursoRef.current = false
+                setAgendando(false)
+            }
+        })()
     }
-
-    const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState(null);
-    const [pasoActual, setPasoActual] = useState(1);
-    const [medicoSeleccionado, setMedicoSeleccionado] = useState(null);
-    const [medicosReales, setMedicosReales] = useState([]);
-    const [horasOcupadas, setHorasOcupadas] = useState([]);
-    const [fecha, setFecha] = useState("");
-    const [hora, setHora] = useState("");
-    const [motivo, setMotivo] = useState("");
 
 
     // Hacemos la petición de los medicos que hay en el backend
@@ -104,6 +148,19 @@ export default function AgendarCita() {
 
     return (
         <div className="min-h-screen bg-base-200">
+            {agendando && (
+                <div
+                    className="fixed inset-0 z-100 flex items-center justify-center bg-neutral/40 backdrop-blur-[2px]"
+                    role="status"
+                    aria-live="polite"
+                    aria-busy="true"
+                >
+                    <div className="flex items-center gap-4 rounded-box border border-base-300 bg-base-100 px-8 py-5 shadow-2xl">
+                        <IconoCarga className="h-10 w-10 text-primary" />
+                        <span className="text-lg font-semibold text-base-content">Agendando tu cita…</span>
+                    </div>
+                </div>
+            )}
             <Navbar />
             {/* HERO */}
             <section className="bg-primary px-6 py-10">
@@ -308,9 +365,29 @@ export default function AgendarCita() {
                             </div>
 
                             <div className="flex justify-between mt-4">
-                                <button className="btn btn-outline" onClick={() => setPasoActual(3)}>← Atrás</button>
-                                <button className="btn btn-success text-white" onClick={confirmarCita}>
-                                    ✓ Confirmar Cita
+                                <button
+                                    type="button"
+                                    className="btn btn-outline"
+                                    onClick={() => setPasoActual(3)}
+                                    disabled={agendando}
+                                >
+                                    ← Atrás
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary min-w-44 gap-2"
+                                    onClick={confirmarCita}
+                                    disabled={agendando}
+                                    aria-busy={agendando}
+                                >
+                                    {agendando ? (
+                                        <>
+                                            <IconoCarga className="h-5 w-5 shrink-0 text-primary-content" />
+                                            Agendando…
+                                        </>
+                                    ) : (
+                                        "Confirmar cita"
+                                    )}
                                 </button>
                             </div>
                         </>

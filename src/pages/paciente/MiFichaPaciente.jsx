@@ -73,8 +73,8 @@ export default function MiFichaPaciente() {
                             <p><strong>Email:</strong> {ficha.email}</p>
                             <p><strong>Previsión:</strong> {ficha.prevision}</p>
                             <p><strong>Fecha de Nacimiento:</strong> {ficha.fechaNacimiento}</p>
-                            <p><strong>Alergias:</strong> {ficha.alergias}</p>
-                            <p><strong>Enfermedades Crónicas:</strong> {ficha.enfermedadesCronicas}</p>
+                            <p><strong>Alergias:</strong> {ficha.alergias || "No tiene alergias"} </p>
+                            <p><strong>Enfermedades Crónicas:</strong> {ficha.enfermedadesCronicas || "No tiene enfermedades"}</p>
                             <p><strong>Tipo de sangre:</strong> {ficha.tipoSangre}</p>
 
                         </div>

@@ -189,6 +189,10 @@ export default function PacientesAdmin() {
 
                         <div className="space-y-3 text-sm">
                             <div className="flex justify-between">
+                                <span className="font-semibold text-base-content/60">ID</span>
+                                <span>{pacienteSeleccionado.id || "—"}</span>
+                            </div>
+                            <div className="flex justify-between">
                                 <span className="font-semibold text-base-content/60">RUT</span>
                                 <span>{pacienteSeleccionado.rut || "—"}</span>
                             </div>
@@ -210,7 +214,7 @@ export default function PacientesAdmin() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="font-semibold text-base-content/60">Fecha de Nacimiento</span>
-                                <span>{pacienteSeleccionado.fechaNacimiento || "—"}</span>
+                                <span>{pacienteSeleccionado.fechaNacimiento?.split('-').reverse().join('/') || "—"}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="font-semibold text-base-content/60">Género</span>
@@ -222,11 +226,11 @@ export default function PacientesAdmin() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="font-semibold text-base-content/60">Alergias</span>
-                                <span>{pacienteSeleccionado.alergias || "—"}</span>
+                                <span>{pacienteSeleccionado.alergias || "Sin alergias"}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="font-semibold text-base-content/60">Enfermedades Crónicas</span>
-                                <span>{pacienteSeleccionado.enfermedadesCronicas || "—"}</span>
+                                <span>{pacienteSeleccionado.enfermedadesCronicas || "Sin enfermedades crónicas "}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="font-semibold text-base-content/60">Registrado desde</span>

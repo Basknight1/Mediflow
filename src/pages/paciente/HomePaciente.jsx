@@ -155,7 +155,7 @@ export default function HomePaciente() {
 
       <section className="bg-primary px-6 py-12 sm:px-12 sm:py-16">
         <div className="max-w-5xl mx-auto">
-          <span className="badge badge-success text-success-content font-semibold">Paciente</span>
+          <span className="badge badge-success font-semibold text-white">Paciente</span>
 
           <h1 className="text-primary-content text-3xl sm:text-5xl font-bold mt-3 mb-2">
             Hola, {usuario?.nombre}

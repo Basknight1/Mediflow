@@ -39,7 +39,16 @@ export default function AuthProvider({ children }) {
             rut: datos.rut,
             telefono: datos.telefono,
             prevision: datos.prevision,
-            createdAt: datos.createdAt
+            createdAt: datos.createdAt,
+            genero: datos.genero,
+            direccion: datos.direccion,
+            contactoEmergenciaNombre: datos.contactoEmergenciaNombre,
+            contactoEmergenciaTelefono: datos.contactoEmergenciaTelefono,
+            // Solo paciente
+            fechaNacimiento: datos.fechaNacimiento,
+            alergias: datos.alergias,
+            enfermedadesCronicas: datos.enfermedadesCronicas,
+            tipoSangre: datos.tipoSangre,
         }
 
         // Extraer datos específicos de médico
@@ -54,7 +63,9 @@ export default function AuthProvider({ children }) {
                 universidad: src.universidad,
                 experiencia: src.experiencia,
                 direccion: src.direccion,
-                biografia: src.biografia
+                biografia: src.biografia,
+                horaInicio: src.horaInicio,
+                horaFin: src.horaFin
             }
         }
 

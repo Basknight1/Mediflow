@@ -15,11 +15,13 @@ import PacientesAdmin from './pages/admin/PacientesAdmin'
 import MedicosAdmin from './pages/admin/MedicosAdmin'
 import CitasYPagosAdmin from './pages/admin/CitasYPagosAdmin'
 import ReportesAdmin from './pages/admin/ReportesAdmin'
+import Register from './pages/auth/Register'
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
       <Route path="/admin" element={
         <ProtectedRoute rolRequerido="ADMINISTRADOR">

@@ -3,6 +3,7 @@ import Footer from "../../components/Footer";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react";
+import AvatarDefault from "../../assets/avatar-default.png"
 import axios from "axios";
 
 const accesosRapidos = [
@@ -56,7 +57,7 @@ export default function HomeMedico() {
         );
         setNombresPacientes(nombres);
       } catch {
-        // silently fail on home
+
       } finally {
         setCargando(false);
       }
@@ -82,15 +83,15 @@ export default function HomeMedico() {
           <div className="flex flex-wrap gap-3 mb-6">
             <div className="bg-primary-content/10 backdrop-blur rounded-lg px-4 py-2 text-primary-content">
               <span className="text-2xl font-bold">{citasHoy.length}</span>
-              <span className="text-sm ml-2 opacity-70">citas hoy</span>
+              <span className="text-sm ml-2 opacity-70">Cita(s) hoy</span>
             </div>
             <div className="bg-primary-content/10 backdrop-blur rounded-lg px-4 py-2 text-primary-content">
               <span className="text-2xl font-bold">{citasHoy.filter(c => c.estado === "CONFIRMADA").length}</span>
-              <span className="text-sm ml-2 opacity-70">confirmadas</span>
+              <span className="text-sm ml-2 opacity-70">Confirmadas</span>
             </div>
             <div className="bg-primary-content/10 backdrop-blur rounded-lg px-4 py-2 text-primary-content">
               <span className="text-2xl font-bold">{citasHoy.filter(c => c.estado === "PENDIENTE").length}</span>
-              <span className="text-sm ml-2 opacity-70">pendientes</span>
+              <span className="text-sm ml-2 opacity-70">Pendientes</span>
             </div>
           </div>
 
@@ -146,7 +147,7 @@ export default function HomeMedico() {
                 <div key={cita.id} className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                   <div className="card-body p-4 sm:p-5 flex-row items-center gap-4">
                     <div className="bg-primary/10 text-primary rounded-xl w-12 h-12 flex items-center justify-center shrink-0 font-bold text-sm">
-                      {nombre.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
+                      <img src={AvatarDefault} alt="Avatar usuario" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-base-content truncate">{nombre}</p>
@@ -154,7 +155,7 @@ export default function HomeMedico() {
                     </div>
                     <div className="text-right shrink-0 flex flex-col items-end gap-1">
                       <span className="text-xs text-base-content/60">
-                        {cita.hora?.slice(0, 5)} · {cita.duracionMinutos || "—"} min
+                        {cita.hora?.slice(0, 5)}
                       </span>
                       <span className={`badge badge-sm ${estadoBadge[cita.estado]}`}>
                         {estadoLabel[cita.estado]}

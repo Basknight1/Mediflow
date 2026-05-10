@@ -3,6 +3,7 @@ import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
 import { useState, useRef } from "react";
 import axios from "axios";
+import AvatarDefault from "../../assets/avatar-default.png"
 
 // Perfil del médico - usa entidades separadas Usuario y Medico
 export default function PerfilMedico() {
@@ -95,15 +96,8 @@ export default function PerfilMedico() {
           <div className="card bg-base-100 shadow-sm h-fit">
             <div className="card-body items-center text-center py-5 px-4">
               <div className="avatar placeholder">
-                <div className="bg-primary text-primary-content rounded-full w-16">
-                  <span className="text-2xl font-bold">
-                    {(usuario?.nombre || "Usuario")
-                      .split(" ")
-                      .map((p) => p[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase()}
-                  </span>
+                <div className="bg-primary/10 text-primary rounded-full w-25">
+                  <img src={AvatarDefault} alt="Avatar usuario" />
                 </div>
               </div>
 

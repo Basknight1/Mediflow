@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import axios from "axios";
 import Navbar from "../../components/Navbar";
 import { useAuth } from "../../context/AuthContext";
+import AvatarDefault from "../../assets/avatar-default.png"
 
 /* ─── Mapeo estado → clases DaisyUI ─── */
 const estadoBadge = {
@@ -17,6 +19,13 @@ const estadoLabel = {
   CANCELADA: "Cancelada",
   FINALIZADA: "Finalizada",
 };
+
+const filtrosEstadoCitas = [
+  { value: "CONFIRMADA", label: "Confirmada" },
+  { value: "PENDIENTE", label: "Pendiente" },
+  { value: "CANCELADA", label: "Cancelada" },
+  { value: "FINALIZADA", label: "Finalizada" },
+];
 
 /* ─── Iniciales del nombre para avatar ─── */
 function getIniciales(nombre) {
@@ -61,6 +70,36 @@ function getErrorMessage(err, fallback) {
   return fallback;
 }
 
+// Espera unos segundos para mostrar la animación de carga al crear una cita.
+function esperarAnim() {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve())
+    })
+  })
+}
+
+function IconoCarga({ className }) {
+  return (
+    <svg
+      className={`animate-spin ${className ?? ""}`}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      width="1em"
+      height="1em"
+      aria-hidden
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
+    </svg>
+  )
+}
+
 export default function AgendaMedico() {
   const { usuario } = useAuth();
   const [citas, setCitas] = useState([]);
@@ -83,6 +122,12 @@ export default function AgendaMedico() {
     diagnostico: "",
     indicaciones: "",
   });
+
+  /**
+   * Cita en la que se está cambiando estado desde la lista + destino (para mostrar el texto solo en el botón correcto).
+   */
+  const [accionEstadoEnCurso, setAccionEstadoEnCurso] = useState(null);
+  const envioEnCursoRef = useRef(false);
 
   useEffect(() => {
     if (!usuario?.id) return;
@@ -141,35 +186,45 @@ export default function AgendaMedico() {
     cargarCitas();
   }, [usuario?.id]);
 
+  // Hacemos la comunicación con el backend y le insertamos los datos
+  // que uno elige en el frontend para ponerlos en el backend Citas.
   const cambiarEstado = async (citaId, nuevoEstado) => {
+    if (envioEnCursoRef.current) return
+    envioEnCursoRef.current = true
+    setAccionEstadoEnCurso({ citaId, nuevoEstado })
     try {
-      const res = await axios.put(`http://localhost:8082/citas/${citaId}/estado?nuevoEstado=${nuevoEstado}`);
-      setCitas((prev) => prev.map((c) => (c.id === citaId ? res.data : c)));
+      const res = await axios.put(
+        `http://localhost:8082/citas/${citaId}/estado?nuevoEstado=${nuevoEstado}`
+      )
+      setCitas((prev) => prev.map((c) => (c.id === citaId ? res.data : c)))
 
       if (nuevoEstado === "CONFIRMADA") {
         try {
-          const pagoRes = await axios.get(`http://localhost:8083/pagos/cita/${citaId}`);
-          setPagosPorCita((prev) => ({ ...prev, [citaId]: pagoRes.data }));
+          const pagoRes = await axios.get(`http://localhost:8083/pagos/cita/${citaId}`)
+          setPagosPorCita((prev) => ({ ...prev, [citaId]: pagoRes.data }))
           setErroresPagoPorCita((prev) => {
-            const next = { ...prev };
-            delete next[citaId];
-            return next;
-          });
+            const next = { ...prev }
+            delete next[citaId]
+            return next
+          })
         } catch (err) {
           if (err?.response?.status === 404) {
-            setPagosPorCita((prev) => ({ ...prev, [citaId]: null }));
+            setPagosPorCita((prev) => ({ ...prev, [citaId]: null }))
           } else {
             setErroresPagoPorCita((prev) => ({
               ...prev,
               [citaId]: "No se pudo verificar el pago de esta cita.",
-            }));
+            }))
           }
         }
       }
     } catch {
-      alert("No se pudo actualizar el estado.");
+      alert("No se pudo actualizar el estado.")
+    } finally {
+      envioEnCursoRef.current = false
+      setAccionEstadoEnCurso(null)
     }
-  };
+  }
 
   const abrirModalFinalizacion = async (cita) => {
     setMensaje(null);
@@ -245,34 +300,40 @@ export default function AgendaMedico() {
     setMostrarConfirmacionFinal(true);
   };
 
-  const finalizarConRegistro = async () => {
+  const finalizarConRegistro = () => {
     if (!citaParaFinalizar) return;
 
-    try {
+    flushSync(() => {
       setGuardandoRegistro(true);
       setError(null);
+    });
 
-      await axios.post("http://localhost:8082/citas/registros-consulta", {
-        citaId: citaParaFinalizar.id,
-        pacienteId: citaParaFinalizar.pacienteId,
-        medicoId: citaParaFinalizar.medicoId,
-        observaciones: formData.observaciones.trim(),
-        diagnostico: formData.diagnostico.trim(),
-        indicaciones: formData.indicaciones.trim(),
-      });
+    void (async () => {
+      try {
+        await esperarAnim();
 
-      const res = await axios.put(
-        `http://localhost:8082/citas/${citaParaFinalizar.id}/estado?nuevoEstado=FINALIZADA`
-      );
+        await axios.post("http://localhost:8082/citas/registros-consulta", {
+          citaId: citaParaFinalizar.id,
+          pacienteId: citaParaFinalizar.pacienteId,
+          medicoId: citaParaFinalizar.medicoId,
+          observaciones: formData.observaciones.trim(),
+          diagnostico: formData.diagnostico.trim(),
+          indicaciones: formData.indicaciones.trim(),
+        });
 
-      setCitas((prev) => prev.map((c) => (c.id === citaParaFinalizar.id ? res.data : c)));
-      setMensaje("La cita fue finalizada y el registro quedó guardado.");
-      cerrarModalFinalizacion();
-    } catch (err) {
-      setError(getErrorMessage(err, "No se pudo finalizar la cita con el registro."));
-    } finally {
-      setGuardandoRegistro(false);
-    }
+        const res = await axios.put(
+          `http://localhost:8082/citas/${citaParaFinalizar.id}/estado?nuevoEstado=FINALIZADA`
+        );
+
+        setCitas((prev) => prev.map((c) => (c.id === citaParaFinalizar.id ? res.data : c)));
+        setMensaje("La cita fue finalizada y el registro quedó guardado.");
+        cerrarModalFinalizacion();
+      } catch (err) {
+        setError(getErrorMessage(err, "No se pudo finalizar la cita con el registro."));
+      } finally {
+        setGuardandoRegistro(false);
+      }
+    })();
   };
 
   const citasFiltradas = filtroActivo === "Todas" ? citas : citas.filter((c) => c.estado === filtroActivo);
@@ -285,8 +346,27 @@ export default function AgendaMedico() {
   const pendientes = citasHoy.filter((c) => c.estado === "PENDIENTE").length;
   const canceladas = citasHoy.filter((c) => c.estado === "CANCELADA").length;
 
+  const ocupadoActualizandoEstado = accionEstadoEnCurso !== null;
+  const ocupadoGuardandoFinal = guardandoRegistro;
+  const mostrarOverlayAccion = ocupadoActualizandoEstado || ocupadoGuardandoFinal;
+
   return (
     <div className="min-h-screen bg-base-200">
+      {mostrarOverlayAccion && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral/40 backdrop-blur-[2px]"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="flex items-center gap-4 rounded-box border border-base-300 bg-base-100 px-8 py-5 shadow-2xl">
+            <IconoCarga className="h-10 w-10 text-primary" />
+            <span className="text-lg font-semibold text-base-content">
+              {ocupadoGuardandoFinal ? "Guardando y finalizando…" : "Actualizando la cita…"}
+            </span>
+          </div>
+        </div>
+      )}
       <Navbar />
 
       <section className="bg-primary px-6 py-10">
@@ -302,20 +382,20 @@ export default function AgendaMedico() {
           <div className="flex flex-wrap gap-3">
             <div className="bg-primary-content/10 backdrop-blur rounded-lg px-4 py-2 text-primary-content">
               <span className="text-2xl font-bold">{citasHoy.length}</span>
-              <span className="text-sm ml-2 opacity-70">citas hoy</span>
+              <span className="text-sm ml-2 opacity-70">Cita(s) hoy</span>
             </div>
             <div className="bg-primary-content/10 backdrop-blur rounded-lg px-4 py-2 text-primary-content">
               <span className="text-2xl font-bold">{confirmadas}</span>
-              <span className="text-sm ml-2 opacity-70">confirmadas</span>
+              <span className="text-sm ml-2 opacity-70">Confirmada(s)</span>
             </div>
             <div className="bg-primary-content/10 backdrop-blur rounded-lg px-4 py-2 text-primary-content">
               <span className="text-2xl font-bold">{pendientes}</span>
-              <span className="text-sm ml-2 opacity-70">pendientes</span>
+              <span className="text-sm ml-2 opacity-70">Pendiente(s)</span>
             </div>
             {canceladas > 0 && (
               <div className="bg-primary-content/10 backdrop-blur rounded-lg px-4 py-2 text-primary-content">
                 <span className="text-2xl font-bold">{canceladas}</span>
-                <span className="text-sm ml-2 opacity-70">canceladas</span>
+                <span className="text-sm ml-2 opacity-70">Canceladas</span>
               </div>
             )}
           </div>
@@ -332,39 +412,26 @@ export default function AgendaMedico() {
 
           <div className="flex flex-col gap-2 mb-2">
             <p className="text-sm text-gray-500 font-semibold">Filtrar por estado</p>
-            <div className="filter">
+            <div className="filter flex flex-wrap gap-2">
               {filtroActivo !== "Todas" && (
-                <input
-                  className="btn btn-square"
-                  type="reset"
-                  value="×"
+                <button
+                  type="button"
+                  className="btn btn-sm btn-square"
                   onClick={() => setFiltroActivo("Todas")}
-                />
+                >
+                  ×
+                </button>
               )}
-              <input
-                className="btn btn-primary"
-                type="radio"
-                name="filtro"
-                aria-label="Confirmada"
-                checked={filtroActivo === "CONFIRMADA"}
-                onChange={() => setFiltroActivo("CONFIRMADA")}
-              />
-              <input
-                className="btn btn-primary"
-                type="radio"
-                name="filtro"
-                aria-label="Pendiente"
-                checked={filtroActivo === "PENDIENTE"}
-                onChange={() => setFiltroActivo("PENDIENTE")}
-              />
-              <input
-                className="btn btn-primary"
-                type="radio"
-                name="filtro"
-                aria-label="Cancelada"
-                checked={filtroActivo === "CANCELADA"}
-                onChange={() => setFiltroActivo("CANCELADA")}
-              />
+              {filtrosEstadoCitas.map((filtro) => (
+                <button
+                  key={filtro.value}
+                  type="button"
+                  className={`btn btn-sm ${filtroActivo === filtro.value ? "btn-primary" : "btn-outline btn-primary"}`}
+                  onClick={() => setFiltroActivo(filtro.value)}
+                >
+                  {filtro.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -412,7 +479,7 @@ export default function AgendaMedico() {
                         <div className="card-body p-4 sm:p-5">
                           <div className="flex-row flex items-center gap-4">
                             <div className="bg-primary/10 text-primary rounded-xl w-12 h-12 flex items-center justify-center shrink-0 font-bold text-sm">
-                              {getIniciales(nombrePaciente)}
+                              <img src={AvatarDefault} alt="Avatar usuario" />
                             </div>
 
                             <div className="flex-1 min-w-0">
@@ -428,16 +495,40 @@ export default function AgendaMedico() {
                           {cita.estado === "PENDIENTE" && (
                             <div className="flex gap-2 mt-3 justify-end">
                               <button
-                                className="btn btn-success btn-xs"
+                                type="button"
+                                className="btn btn-success btn-xs min-w-28 gap-1"
                                 onClick={() => cambiarEstado(cita.id, "CONFIRMADA")}
+                                disabled={ocupadoActualizandoEstado}
+                                aria-busy={
+                                  accionEstadoEnCurso?.citaId === cita.id &&
+                                  accionEstadoEnCurso?.nuevoEstado === "CONFIRMADA"
+                                }
                               >
-                                Confirmar
+                                {accionEstadoEnCurso?.citaId === cita.id &&
+                                  accionEstadoEnCurso?.nuevoEstado === "CONFIRMADA" ? (
+                                  <>
+                                    <IconoCarga className="h-4 w-4 shrink-0 text-success-content" />
+                                    Confirmando…
+                                  </>
+                                ) : (
+                                  "Confirmar"
+                                )}
                               </button>
                               <button
-                                className="btn btn-error btn-xs"
+                                type="button"
+                                className="btn btn-error btn-xs min-w-28 gap-1"
                                 onClick={() => cambiarEstado(cita.id, "CANCELADA")}
+                                disabled={ocupadoActualizandoEstado}
                               >
-                                Cancelar
+                                {accionEstadoEnCurso?.citaId === cita.id &&
+                                  accionEstadoEnCurso?.nuevoEstado === "CANCELADA" ? (
+                                  <>
+                                    <IconoCarga className="h-4 w-4 shrink-0 text-error-content" />
+                                    Cancelando…
+                                  </>
+                                ) : (
+                                  "Cancelar"
+                                )}
                               </button>
                             </div>
                           )}
@@ -449,17 +540,28 @@ export default function AgendaMedico() {
                               )}
                               <div className="flex gap-2 justify-end">
                                 <button
+                                  type="button"
                                   className="btn btn-neutral btn-xs disabled:btn-disabled"
                                   onClick={() => abrirModalFinalizacion(cita)}
-                                  disabled={!puedeFinalizarCita}
+                                  disabled={!puedeFinalizarCita || ocupadoActualizandoEstado}
                                 >
                                   Finalizar cita
                                 </button>
                                 <button
-                                  className="btn btn-error btn-xs"
+                                  type="button"
+                                  className="btn btn-error btn-xs min-w-28 gap-1"
                                   onClick={() => cambiarEstado(cita.id, "CANCELADA")}
+                                  disabled={ocupadoActualizandoEstado}
                                 >
-                                  Cancelar
+                                  {accionEstadoEnCurso?.citaId === cita.id &&
+                                    accionEstadoEnCurso?.nuevoEstado === "CANCELADA" ? (
+                                    <>
+                                      <IconoCarga className="h-4 w-4 shrink-0 text-error-content" />
+                                      Cancelando…
+                                    </>
+                                  ) : (
+                                    "Cancelar"
+                                  )}
                                 </button>
                               </div>
                             </div>
@@ -477,7 +579,9 @@ export default function AgendaMedico() {
             <div className="text-center py-12 text-base-content/50">
               <span className="text-4xl mb-3 block">📭</span>
               <p className="font-semibold">
-                {filtroActivo === "Todas" ? "No tienes citas registradas" : "No hay citas con ese estado"}
+                {filtroActivo === "Todas"
+                  ? "No tienes citas registradas"
+                  : `No tienes citas con estado "${estadoLabel[filtroActivo]}".`}
               </p>
               <p className="text-sm">{filtroActivo !== "Todas" && "Prueba con otro filtro."}</p>
             </div>
@@ -625,11 +729,20 @@ export default function AgendaMedico() {
                 Volver
               </button>
               <button
-                className="btn btn-primary w-full sm:w-auto"
+                type="button"
+                className="btn btn-primary w-full sm:w-auto min-w-44 gap-2"
                 onClick={finalizarConRegistro}
                 disabled={guardandoRegistro}
+                aria-busy={guardandoRegistro}
               >
-                {guardandoRegistro ? "Guardando..." : "Confirmar y finalizar"}
+                {guardandoRegistro ? (
+                  <>
+                    <IconoCarga className="h-5 w-5 shrink-0 text-primary-content" />
+                    Guardando…
+                  </>
+                ) : (
+                  "Confirmar y finalizar"
+                )}
               </button>
             </div>
           </div>

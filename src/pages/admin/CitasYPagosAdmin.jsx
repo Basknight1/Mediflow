@@ -5,6 +5,12 @@ import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import AvatarDefault from "../../assets/avatar-default.png";
 
+const filtrosEstadoCitas = [
+    { value: "CONFIRMADA", label: "Confirmada" },
+    { value: "PENDIENTE", label: "Pendiente" },
+    { value: "CANCELADA", label: "Cancelada" },
+    { value: "FINALIZADA", label: "Finalizada" },
+];
 
 export default function CitasYPagosAdmin() {
     const { usuario } = useAuth();
@@ -201,19 +207,28 @@ export default function CitasYPagosAdmin() {
                                 />
                             </label>
 
-                            <div className="flex flex-col gap-1 items-end">
-                                <p className="text-xs text-gray-500 font-semibold">Filtrar por estado</p>
-                                <div className="filter">
+                            <div className="flex flex-col gap-2 items-end">
+                                <p className="text-sm text-gray-500 font-semibold">Filtrar por estado</p>
+                                <div className="filter flex flex-wrap gap-2 justify-end">
                                     {filtroActivo !== "Todas" && (
-                                        <input className="btn btn-square btn-sm" type="reset" value="×"
-                                            onClick={() => setFiltroActivo("Todas")} />
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-square"
+                                            onClick={() => setFiltroActivo("Todas")}
+                                        >
+                                            ×
+                                        </button>
                                     )}
-                                    <input className="btn btn-primary btn-sm" type="radio" name="filtro" aria-label="Confirmada"
-                                        checked={filtroActivo === "CONFIRMADA"} onChange={() => setFiltroActivo("CONFIRMADA")} />
-                                    <input className="btn btn-primary btn-sm" type="radio" name="filtro" aria-label="Pendiente"
-                                        checked={filtroActivo === "PENDIENTE"} onChange={() => setFiltroActivo("PENDIENTE")} />
-                                    <input className="btn btn-primary btn-sm" type="radio" name="filtro" aria-label="Cancelada"
-                                        checked={filtroActivo === "CANCELADA"} onChange={() => setFiltroActivo("CANCELADA")} />
+                                    {filtrosEstadoCitas.map((filtro) => (
+                                        <button
+                                            key={filtro.value}
+                                            type="button"
+                                            className={`btn btn-sm ${filtroActivo === filtro.value ? "btn-primary" : "btn-outline btn-primary"}`}
+                                            onClick={() => setFiltroActivo(filtro.value)}
+                                        >
+                                            {filtro.label}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -273,7 +288,7 @@ export default function CitasYPagosAdmin() {
                                                 </td>
                                                 <td>
                                                     <button
-                                                        className="btn btn-sm btn-primary"
+                                                        className="btn btn-sm btn-primary transition delay-50 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110"
                                                         onClick={() => setCitaSeleccionada(cita)}
                                                     >
                                                         Ver detalle
@@ -289,7 +304,9 @@ export default function CitasYPagosAdmin() {
                                 <div className="text-center py-8 text-base-content/50">
                                     {citas.length === 0
                                         ? "No hay citas registradas."
-                                        : "No se encontraron citas con esa búsqueda."}
+                                        : filtroActivo !== "Todas"
+                                            ? `No hay citas con estado "${formatearEstado(filtroActivo)}".`
+                                            : "No se encontraron citas con esa búsqueda."}
                                 </div>
                             )}
                         </div>
@@ -385,7 +402,7 @@ export default function CitasYPagosAdmin() {
                             )}
                         </div>
                         <div className="modal-action">
-                            <button className="btn btn-sm btn-primary" onClick={() => setCitaSeleccionada(null)}>Cerrar</button>
+                            <button className="btn btn-sm btn-primary  transition delay-50 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110" onClick={() => setCitaSeleccionada(null)}>Cerrar</button>
                         </div>
                     </div>
                     <div className="modal-backdrop" onClick={() => setCitaSeleccionada(null)}></div>
