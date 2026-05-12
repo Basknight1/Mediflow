@@ -43,7 +43,7 @@ export default function MedicosAdmin() {
         const cargar = async () => {
             try {
                 // Obtener todos los médicos registrados
-                const medicosRes = await axios.get(`http://localhost:8081/usuarios/medicos`);
+                const medicosRes = await axios.get(`http://localhost:8080/bff/admin/medicos`);
                 const data = Array.isArray(medicosRes.data) ? medicosRes.data : [];
                 setMedicos(data);
             } catch {
@@ -109,12 +109,12 @@ export default function MedicosAdmin() {
 
         try {
             const numeroRegistroAuto = `MED-${Date.now().toString().slice(-5)}`
-            await axios.post("http://localhost:8081/usuarios/register", {
+            await axios.post("http://localhost:8080/bff/usuarios/register", {
                 ...nuevoMedico,
                 rol: "MEDICO",
                 numeroRegistro: numeroRegistroAuto
             })
-            mostrarAlerta("primary", "Médico creado correctamente")
+            mostrarAlerta("info", "Médico creado correctamente")
             setModalRegistrar(false);
             setNuevoMedico({
                 nombre: "", rut: "", email: "", password: "",
@@ -122,19 +122,21 @@ export default function MedicosAdmin() {
                 experiencia: "", horaInicio: "", horaFin: "",
                 genero: "", numeroRegistro: "", biografia: ""
             })
-            const res = await axios.get(`http://localhost:8081/usuarios/medicos`)
+            const res = await axios.get(`http://localhost:8080/bff/admin/medicos`)
             setMedicos(res.data)
 
         } catch (error) {
-            const mensaje = error?.response?.data || "Error al registrar el médico"
-            mostrarAlerta("error", mensaje)
+            const mensaje = error?.response?.data?.message ||
+                error?.response?.data ||
+                "Error al registrar el médico"
+            mostrarAlerta("error", typeof mensaje === 'string' ? mensaje : "Error al registrar el médico")
         }
     }
 
     const eliminarMedico = async (id) => {
         if (!window.confirm("¿Estás seguro que deseas eliminar este médico?")) return
         try {
-            await axios.delete(`http://localhost:8081/usuarios/medicos/${id}`)
+            await axios.delete(`http://localhost:8080/bff/usuarios/medicos/${id}`)
             setMedicos(medicos.filter(m => m.id !== id))
             mostrarAlerta("primary", "Médico eliminado correctamente")
             setMedicoSeleccionado(null);

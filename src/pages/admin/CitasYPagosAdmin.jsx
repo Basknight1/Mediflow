@@ -33,10 +33,10 @@ export default function CitasYPagosAdmin() {
         const cargar = async () => {
             try {
                 const [citasRes, pacientesRes, medicosRes, pagosRes] = await Promise.all([
-                    axios.get(`http://localhost:8082/citas`),
-                    axios.get(`http://localhost:8081/usuarios/pacientes`),
-                    axios.get(`http://localhost:8081/usuarios/medicos`),
-                    axios.get(`http://localhost:8083/pagos`)
+                    axios.get(`http://localhost:8080/bff/citas`),
+                    axios.get(`http://localhost:8080/bff/admin/pacientes`),
+                    axios.get(`http://localhost:8080/bff/admin/medicos`),
+                    axios.get(`http://localhost:8080/bff/pagos`)
                 ])
 
 

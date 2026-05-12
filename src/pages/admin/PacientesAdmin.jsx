@@ -25,7 +25,7 @@ export default function PacientesAdmin() {
         const cargar = async () => {
             try {
                 // Obtener todos los pacientes registrados
-                const pacientesRes = await axios.get(`http://localhost:8081/usuarios/pacientes`);
+                const pacientesRes = await axios.get(`http://localhost:8080/bff/admin/pacientes`);
                 const data = Array.isArray(pacientesRes.data) ? pacientesRes.data : [];
                 setPacientes(data);
             } catch {

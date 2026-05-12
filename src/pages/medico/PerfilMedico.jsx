@@ -34,7 +34,7 @@ export default function PerfilMedico() {
     }
     setGuardandoPassword(true);
     try {
-      await axios.put(`http://localhost:8081/usuarios/${usuario.id}/password`, {
+      await axios.put(`http://localhost:8080/bff/usuarios/${usuario.id}/password`, {
         passwordActual: passwordData.passwordActual,
         passwordNueva: passwordData.passwordNueva,
       });
@@ -52,7 +52,7 @@ export default function PerfilMedico() {
     setGuardando(true);
     setError(null);
     try {
-      const response = await axios.put(`http://localhost:8081/usuarios/${usuario.id}`, {
+      const response = await axios.put(`http://localhost:8080/bff/usuarios/${usuario.id}`, {
         nombre: formData.nombre,
         telefono: formData.telefono,
         biografia: medicoFormData.biografia,

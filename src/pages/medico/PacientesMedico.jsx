@@ -39,7 +39,7 @@ export default function PacientesMedico() {
 
     const cargar = async () => {
       try {
-        const citasRes = await axios.get(`http://localhost:8082/citas/medico/${usuario.id}`);
+        const citasRes = await axios.get(`http://localhost:8080/bff/citas/medico/${usuario.id}`);
         const citas = Array.isArray(citasRes.data) ? citasRes.data : [];
         const citasVigentes = citas.filter((cita) => cita.estado !== "CANCELADA");
         const citasPorPaciente = new Map();
@@ -58,9 +58,9 @@ export default function PacientesMedico() {
           pacienteIds.map(async (id) => {
             try {
               const [pacienteRes, registroRes] = await Promise.all([
-                axios.get(`http://localhost:8081/usuarios/${id}`),
+                axios.get(`http://localhost:8080/bff/usuarios/${id}`),
                 axios
-                  .get(`http://localhost:8082/citas/registros-consulta/paciente/${id}/medico/${usuario.id}`)
+                  .get(`http://localhost:8080/bff/registros-consulta/cita/${id}`)
                   .catch((err) => {
                     if (err?.response?.status === 404) return { data: null };
                     throw err;

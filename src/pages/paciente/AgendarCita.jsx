@@ -84,7 +84,7 @@ export default function AgendarCita() {
         void (async () => {
             try {
                 await esperarAnim()
-                await axios.post("http://localhost:8082/citas", {
+                await axios.post("http://localhost:8080/bff/citas", {
                     pacienteId: usuario.id,
                     medicoId: medicoSeleccionado.id,
                     fecha: fecha,
@@ -109,7 +109,7 @@ export default function AgendarCita() {
     // Para detectar los médicos existentes y así poderlos mostrar en el frontend.
     useEffect(() => {
         if (especialidadSeleccionada) {
-            axios.get(`http://localhost:8081/usuarios/medicos/especialidad/${especialidadSeleccionada.nombre}`)
+            axios.get(`http://localhost:8080/bff/usuarios/medicos/especialidad/${especialidadSeleccionada.nombre}`)
                 .then(res => setMedicosReales(res.data))
                 .catch(err => console.error("Error al cargar medicos", err))
         }
@@ -119,7 +119,7 @@ export default function AgendarCita() {
     // UseEffect para poder ver si un médico tiene horas ocupadas en el día.
     useEffect(() => {
         if (medicoSeleccionado && fecha) {
-            axios.get(`http://localhost:8082/citas/medico/${medicoSeleccionado.id}/horas-ocupadas?fecha=${fecha}`)
+            axios.get(`http://localhost:8080/bff/citas/medico/${medicoSeleccionado.id}/horas-ocupadas?fecha=${fecha}`)
                 .then(res => setHorasOcupadas(res.data))
                 .catch(err => console.error(err))
         }

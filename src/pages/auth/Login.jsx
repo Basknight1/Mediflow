@@ -21,7 +21,7 @@ export default function Login() {
         setErrorLogin("")
         setCargando(true)
         try {
-            const response = await axios.post('http://localhost:8081/usuarios/login', { email, password })
+            const response = await axios.post('http://localhost:8080/bff/auth/login', { email, password })
             login(response.data)
             const rol = response.data.rol
             if (rol === "ADMINISTRADOR") navigate("/admin")

@@ -56,7 +56,7 @@ export default function HomePaciente() {
 
       try {
         setLoading(true);
-        const citasRes = await axios.get(`http://localhost:8082/citas/paciente/${usuario.id}`);
+        const citasRes = await axios.get(`http://localhost:8080/bff/citas/paciente/${usuario.id}`);
         const citasBase = Array.isArray(citasRes.data) ? citasRes.data : [];
 
         const citasEnriquecidas = await Promise.all(
@@ -65,7 +65,7 @@ export default function HomePaciente() {
               cita.estado === "FINALIZADA"
                 ? axios
                   .get(
-                    `http://localhost:8082/citas/registros-consulta/paciente/${usuario.id}/cita/${cita.id}`
+                    `http://localhost:8080/bff/registros-consulta/paciente/${usuario.id}/cita/${cita.id}`
                   )
                   .then((res) => res.data)
                   .catch((err) => {
@@ -76,7 +76,7 @@ export default function HomePaciente() {
 
             try {
               const [medicoRes, registroConsulta] = await Promise.all([
-                axios.get(`http://localhost:8081/usuarios/${cita.medicoId}`),
+                axios.get(`http://localhost:8080/bff/usuarios/${cita.medicoId}`),
                 detallePromise,
               ]);
 

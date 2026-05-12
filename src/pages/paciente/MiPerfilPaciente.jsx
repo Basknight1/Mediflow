@@ -19,10 +19,9 @@ export default function MiPerfilPaciente() {
             if (!usuario?.id) return;
             try {
                 setLoading(true);
-                const res = await axios.get(`http://localhost:8081/usuarios/${usuario.id}`);
-                const datos = { ...HARDCODEADOS, ...res.data };
-                setPerfil(datos);
-                setPerfilTemp(datos);
+                const res = await axios.get(`http://localhost:8080/bff/usuarios/${usuario.id}`);
+                setPerfil(res.data);
+                setPerfilTemp(res.data);
             } catch (err) {
                 console.error("Error al cargar perfil:", err);
                 setError("No se pudo cargar el perfil.");
@@ -123,7 +122,7 @@ export default function MiPerfilPaciente() {
                         <Campo label="Género" name="genero" value={val("genero")} editando={esCampoEditable("genero")} onChange={handleChange} />
                         <Campo label="Teléfono" name="telefono" value={val("telefono")} editando={esCampoEditable("telefono")} onChange={handleChange} />
                         <Campo label="Email" name="email" value={val("email")} editando={esCampoEditable("email")} onChange={handleChange} />
-                        <Campo label="Dirección" name="direccion" value={val("direccion")} editando={esCampoEditable("direccion")} onChange={handleChange} />
+                        <Campo label="Dirección" name="direccion" value={val("direccion") || "Ninguna dirección"} editando={esCampoEditable("direccion")} onChange={handleChange} />
                     </div>
                 </div>
 
@@ -142,8 +141,8 @@ export default function MiPerfilPaciente() {
                 <div className="bg-base-100 rounded-box shadow-sm p-6 mb-6">
                     <h3 className="text-lg font-bold mb-4">Contacto de Emergencia</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Campo label="Nombre" name="contactoEmergencia" value={val("contactoEmergencia")} editando={esCampoEditable("contactoEmergencia")} onChange={handleChange} />
-                        <Campo label="Teléfono" name="telefonoEmergencia" value={val("telefonoEmergencia")} editando={esCampoEditable("telefonoEmergencia")} onChange={handleChange} />
+                        <Campo label="Nombre" name="contactoEmergencia" value={val("contactoEmergencia") || "Sin información"} editando={esCampoEditable("contactoEmergencia")} onChange={handleChange} />
+                        <Campo label="Teléfono" name="telefonoEmergencia" value={val("telefonoEmergencia") || "Sin información"} editando={esCampoEditable("telefonoEmergencia")} onChange={handleChange} />
                     </div>
                 </div>
 

@@ -39,7 +39,7 @@ export default function HomeMedico() {
 
     const cargar = async () => {
       try {
-        const res = await axios.get(`http://localhost:8082/citas/medico/${usuario.id}`);
+        const res = await axios.get(`http://localhost:8080/bff/citas/medico/${usuario.id}`);
         const deHoy = res.data.filter((c) => c.fecha === hoy);
         setCitasHoy(deHoy);
 
@@ -48,7 +48,7 @@ export default function HomeMedico() {
         await Promise.all(
           ids.map(async (id) => {
             try {
-              const r = await axios.get(`http://localhost:8081/usuarios/${id}`);
+              const r = await axios.get(`http://localhost:8080/bff/usuarios/${id}`);
               nombres[id] = r.data.nombre;
             } catch {
               nombres[id] = `Paciente #${id}`;

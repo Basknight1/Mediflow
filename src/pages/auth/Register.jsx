@@ -64,7 +64,7 @@ export default function Register() {
     const registrar = async () => {
         setCargando(true)
         try {
-            await axios.post("http://localhost:8081/usuarios/register", {
+            await axios.post("http://localhost:8080/bff/auth/register", {
                 ...datos,
                 rol: "PACIENTE",
                 confirmarPassword: undefined
