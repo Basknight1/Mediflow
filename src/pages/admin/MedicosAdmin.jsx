@@ -99,6 +99,11 @@ export default function MedicosAdmin() {
         if (!nuevoMedico.horaInicio) errores.horaInicio = "La hora de inicio es obligatoria"
         else if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(nuevoMedico.horaInicio)) errores.horaInicio = "Formato inválido. Ejemplo: 09:00"
         if (!nuevoMedico.horaFin) errores.horaFin = "La hora de fin es obligatoria"
+        if (nuevoMedico.horaInicio && nuevoMedico.horaFin) {
+            if (nuevoMedico.horaFin <= nuevoMedico.horaInicio) {
+                errores.horaFin = "La hora de fin debe ser mayor a la hora de inicio"
+            }
+        }
         else if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(nuevoMedico.horaFin)) errores.horaFin = "Formato inválido. Ejemplo: 18:00"
         setErroresFormMedico(errores)
         return Object.keys(errores).length === 0
@@ -126,10 +131,13 @@ export default function MedicosAdmin() {
             setMedicos(res.data)
 
         } catch (error) {
-            const mensaje = error?.response?.data?.message ||
-                error?.response?.data ||
-                "Error al registrar el médico"
-            mostrarAlerta("error", typeof mensaje === 'string' ? mensaje : "Error al registrar el médico")
+            console.log("data:", error?.response?.data)
+            console.log("tipo:", typeof error?.response?.data)
+            const data = error?.response?.data
+            let mensaje = "Error al registrar el médico"
+            if (typeof data === 'string') mensaje = data
+            else if (typeof data?.message === 'string') mensaje = data.message
+            mostrarAlerta("error", mensaje)
         }
     }
 
@@ -141,8 +149,7 @@ export default function MedicosAdmin() {
             mostrarAlerta("primary", "Médico eliminado correctamente")
             setMedicoSeleccionado(null);
         } catch (error) {
-            alert("Error al eliminar el médico")
-            console.log(error)
+            mostrarAlerta("error", "Error al eliminar el médico")
         }
     }
 

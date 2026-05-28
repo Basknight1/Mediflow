@@ -71,7 +71,10 @@ export default function Register() {
             })
             navigate("/login")
         } catch (error) {
-            const mensaje = error?.response?.data || "Error al registrarse"
+            const data = error?.response?.data
+            let mensaje = "Error al registrarse"
+            if (typeof data === 'string') mensaje = data
+            else if (typeof data?.message === 'string') mensaje = data.message
             setErrores({ general: mensaje })
             setPaso(1)
         } finally {

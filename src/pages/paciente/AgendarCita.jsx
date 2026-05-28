@@ -5,92 +5,152 @@ import Navbar from "../../components/Navbar";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-// Espera unos segundos para mostrar la animación de carga al crear una cita.
 function esperarAnim() {
     return new Promise((resolve) => {
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => resolve())
-        })
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     })
 }
 
 function IconoCarga({ className }) {
     return (
-        <svg
-            className={`animate-spin ${className ?? ""}`}
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            width="1em"
-            height="1em"
-            aria-hidden
-        >
+        <svg className={`animate-spin ${className ?? ""}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width="1em" height="1em" aria-hidden>
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
     )
 }
 
 const especialidades = [
-    { id: 1, nombre: "Medicina General", icono: "💊" },
-    { id: 2, nombre: "Cardiología", icono: "❤️" },
-    { id: 3, nombre: "Dermatología", icono: "🧴" },
-    { id: 4, nombre: "Psicología", icono: "🧑🏻‍⚕️" },
-    { id: 5, nombre: "Traumatología", icono: "🦴" },
-    { id: 6, nombre: "Neurología", icono: "🧠" },
+    { id: 1, nombre: "Medicina General", descripcion: "Atención primaria y preventiva.", icono: "💊" },
+    { id: 2, nombre: "Cardiología", descripcion: "Salud cardiovascular y chequeos.", icono: "❤️" },
+    { id: 3, nombre: "Dermatología", descripcion: "Cuidado y salud de la piel.", icono: "🧴" },
+    { id: 4, nombre: "Psicología", descripcion: "Salud mental y bienestar.", icono: "🧑🏻‍⚕️" },
+    { id: 5, nombre: "Traumatología", descripcion: "Huesos, músculos y articulaciones.", icono: "🦴" },
+    { id: 6, nombre: "Neurología", descripcion: "Sistema nervioso y cerebro.", icono: "🧠" },
 ]
 
+const pasos = [
+    { num: 1, label: "ESPECIALIDAD" },
+    { num: 2, label: "DOCTOR" },
+    { num: 3, label: "FECHA Y HORA" },
+    { num: 4, label: "CONFIRMAR" },
+]
+
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+function MiniCalendario({ fecha, onChange }) {
+    const hoy = new Date()
+    const hoyStr = hoy.toISOString().split('T')[0]
+    const [vista, setVista] = useState({ mes: hoy.getMonth(), año: hoy.getFullYear() })
+
+    useEffect(() => {
+        if (!fecha) {
+            const h = new Date()
+            setVista({ mes: h.getMonth(), año: h.getFullYear() })
+        }
+    }, [fecha])
+
+    const diasSemana = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+    const primerDia = new Date(vista.año, vista.mes, 1)
+    const ultimoDia = new Date(vista.año, vista.mes + 1, 0)
+    let offset = primerDia.getDay() - 1
+    if (offset < 0) offset = 6
+
+    const celdas = []
+    for (let i = 0; i < offset; i++) celdas.push(null)
+    for (let d = 1; d <= ultimoDia.getDate(); d++) celdas.push(d)
+
+    const toDateStr = (d) =>
+        `${vista.año}-${String(vista.mes + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+
+    const prevMes = () => setVista(v => v.mes === 0 ? { mes: 11, año: v.año - 1 } : { mes: v.mes - 1, año: v.año })
+    const nextMes = () => setVista(v => v.mes === 11 ? { mes: 0, año: v.año + 1 } : { mes: v.mes + 1, año: v.año })
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <button type="button" onClick={prevMes} className="btn btn-ghost btn-sm btn-circle text-xl leading-none">‹</button>
+                <span className="font-semibold text-gray-700 text-sm">{MESES[vista.mes]} {vista.año}</span>
+                <button type="button" onClick={nextMes} className="btn btn-ghost btn-sm btn-circle text-xl leading-none">›</button>
+            </div>
+            <div className="grid grid-cols-7 mb-1">
+                {diasSemana.map((d, i) => (
+                    <span key={i} className="text-xs text-center text-gray-400 font-medium py-1">{d}</span>
+                ))}
+            </div>
+            <div className="grid grid-cols-7 gap-0.5">
+                {celdas.map((dia, idx) => {
+                    if (!dia) return <div key={idx} />
+                    const dateStr = toDateStr(dia)
+                    const isPast = dateStr < hoyStr
+                    const isSelected = dateStr === fecha
+                    const isToday = dateStr === hoyStr
+                    return (
+                        <button
+                            key={idx}
+                            type="button"
+                            disabled={isPast}
+                            onClick={() => onChange(dateStr)}
+                            className={[
+                                'aspect-square w-full rounded-lg text-sm font-medium transition-colors flex items-center justify-center',
+                                isPast ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer',
+                                isSelected ? 'bg-primary text-primary-content' : '',
+                                isToday && !isSelected ? 'text-primary font-bold' : '',
+                                !isPast && !isSelected ? 'hover:bg-gray-100 text-gray-700' : '',
+                            ].filter(Boolean).join(' ')}
+                        >
+                            {dia}
+                        </button>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
 
 export default function AgendarCita() {
-
     const { usuario } = useAuth()
     const navigate = useNavigate()
 
-    const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState(null);
-    const [pasoActual, setPasoActual] = useState(1);
-    const [medicoSeleccionado, setMedicoSeleccionado] = useState(null);
-    const [medicosReales, setMedicosReales] = useState([]);
-    const [horasOcupadas, setHorasOcupadas] = useState([]);
-    const [fecha, setFecha] = useState("");
-    const [hora, setHora] = useState("");
-    const [motivo, setMotivo] = useState("");
-    const [agendando, setAgendando] = useState(false);
-    const envioEnCursoRef = useRef(false);
+    const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState(null)
+    const [medicoSeleccionado, setMedicoSeleccionado] = useState(null)
+    const [medicosReales, setMedicosReales] = useState([])
+    const [cargandoMedicos, setCargandoMedicos] = useState(false)
+    const [horasOcupadas, setHorasOcupadas] = useState([])
+    const [fecha, setFecha] = useState("")
+    const [hora, setHora] = useState("")
+    const [motivo, setMotivo] = useState("")
+    const [agendando, setAgendando] = useState(false)
+    const [enConfirmacion, setEnConfirmacion] = useState(false)
+    const [busqueda, setBusqueda] = useState("")
+    const envioEnCursoRef = useRef(false)
 
-    // Obtenemos el Tipo de Cita que se eligió al agendar y 
-    // asignamos para que se guarde el tipo correcto en el backend.
+    // Paso activo derivado del estado de selección
+    const pasoActivo = enConfirmacion ? 4 : medicoSeleccionado ? 3 : especialidadSeleccionada ? 2 : 1
+
     const obtenerTipoCita = (nombreEspecialidad) => {
         const generales = ["Medicina General"]
         const urgencias = ["Traumatología"]
-
         if (generales.includes(nombreEspecialidad)) return "GENERAL"
         if (urgencias.includes(nombreEspecialidad)) return "URGENCIA"
         return "ESPECIALIDAD"
     }
 
-    // Hacemos la comunicación con el backend y le insertamos los datos
-    // que uno elige en el frontend para ponerlos en el backend Citas.
     const confirmarCita = () => {
         if (envioEnCursoRef.current) return
         envioEnCursoRef.current = true
-        flushSync(() => {
-            setAgendando(true)
-        })
-
+        flushSync(() => { setAgendando(true) })
         void (async () => {
             try {
                 await esperarAnim()
                 await axios.post("http://localhost:8080/bff/citas", {
                     pacienteId: usuario.id,
                     medicoId: medicoSeleccionado.id,
-                    fecha: fecha,
-                    hora: hora,
+                    fecha,
+                    hora,
                     tipo: obtenerTipoCita(especialidadSeleccionada?.nombre),
-                    motivo: motivo
+                    motivo
                 })
                 alert("¡Cita agendada correctamente!")
                 navigate("/paciente")
@@ -104,19 +164,20 @@ export default function AgendarCita() {
         })()
     }
 
-
-    // Hacemos la petición de los medicos que hay en el backend
-    // Para detectar los médicos existentes y así poderlos mostrar en el frontend.
     useEffect(() => {
         if (especialidadSeleccionada) {
+            setMedicoSeleccionado(null)
+            setFecha("")
+            setHora("")
+            setMedicosReales([])
+            setCargandoMedicos(true)
             axios.get(`http://localhost:8080/bff/usuarios/medicos/especialidad/${especialidadSeleccionada.nombre}`)
                 .then(res => setMedicosReales(res.data))
                 .catch(err => console.error("Error al cargar medicos", err))
+                .finally(() => setCargandoMedicos(false))
         }
     }, [especialidadSeleccionada])
 
-
-    // UseEffect para poder ver si un médico tiene horas ocupadas en el día.
     useEffect(() => {
         if (medicoSeleccionado && fecha) {
             axios.get(`http://localhost:8080/bff/citas/medico/${medicoSeleccionado.id}/horas-ocupadas?fecha=${fecha}`)
@@ -125,175 +186,187 @@ export default function AgendarCita() {
         }
     }, [medicoSeleccionado, fecha])
 
-
-    // Genera las horas disponibles dependiendo de la hora de atención del Médico
     const generarHorasDisponibles = () => {
         if (!medicoSeleccionado?.horaInicio || !medicoSeleccionado?.horaFin) return []
-
         const horas = []
         const [hInicio, mInicio] = medicoSeleccionado.horaInicio.split(':').map(Number)
         const [hFin, mFin] = medicoSeleccionado.horaFin.split(':').map(Number)
-
-        let h = hInicio
-        let m = mInicio
-
+        let h = hInicio, m = mInicio
         while (h < hFin || (h === hFin && m < mFin)) {
-            const horaStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-            horas.push(horaStr)
+            horas.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
             m += 30
             if (m >= 60) { m = 0; h++ }
         }
         return horas
     }
 
+    const especialidadesFiltradas = especialidades.filter(e =>
+        e.nombre.toLowerCase().includes(busqueda.toLowerCase())
+    )
+
     return (
-        <div className="min-h-screen bg-base-200">
+        <div className="min-h-screen bg-gray-50">
             {agendando && (
-                <div
-                    className="fixed inset-0 z-100 flex items-center justify-center bg-neutral/40 backdrop-blur-[2px]"
-                    role="status"
-                    aria-live="polite"
-                    aria-busy="true"
-                >
-                    <div className="flex items-center gap-4 rounded-box border border-base-300 bg-base-100 px-8 py-5 shadow-2xl">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px]" role="status" aria-live="polite" aria-busy>
+                    <div className="flex items-center gap-4 rounded-2xl bg-white px-8 py-5 shadow-2xl border border-gray-100">
                         <IconoCarga className="h-10 w-10 text-primary" />
-                        <span className="text-lg font-semibold text-base-content">Agendando tu cita…</span>
+                        <span className="text-lg font-semibold text-gray-800">Agendando tu cita…</span>
                     </div>
                 </div>
             )}
+
             <Navbar />
-            {/* HERO */}
-            <section className="bg-primary px-6 py-10">
-                <div className="max-w-3xl mx-auto">
-                    <span className="badge badge-success text-success-content font-semibold">
-                        Paciente
-                    </span>
 
-                    <h1 className="text-primary-content text-3xl sm:text-5xl font-bold mt-3 mb-2">
-                        Agendar Cita
-                    </h1>
+            {/* Título */}
+            <div className="bg-white border-b border-gray-100 py-7 text-center shadow-sm">
+                <h1 className="text-2xl font-bold text-gray-800">Agendar Nueva Cita</h1>
+            </div>
 
-                    <p className="text-primary-content/70 text-base sm:text-lg mb-8">
-                        Completa los pasos para reservar una cita médica.
-                    </p>
+            {/* Stepper */}
+            <div className="bg-white border-b border-gray-100 py-6 px-4">
+                <div className="max-w-2xl mx-auto">
+                    <div className="flex justify-between items-start relative">
+                        <div className="absolute top-[18px] left-[calc(12.5%)] right-[calc(12.5%)] h-0.5 bg-gray-200 z-0" />
+                        {pasos.map((paso) => (
+                            <div key={paso.num} className="flex flex-col items-center z-10 flex-1">
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all duration-300
+                                    ${pasoActivo >= paso.num
+                                        ? 'bg-primary border-primary text-primary-content'
+                                        : 'bg-white border-gray-300 text-gray-400'}`}>
+                                    {paso.num}
+                                </div>
+                                <span className={`text-xs font-semibold mt-2 uppercase tracking-wider text-center transition-colors duration-300
+                                    ${pasoActivo >= paso.num ? 'text-primary' : 'text-gray-400'}`}>
+                                    {paso.label}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </section>
-            <main className="max-w-3xl mx-auto px-4 py-8">
-                <div>
-                    <ul className="steps steps-vertical lg:steps-horizontal">
-                        <li className={`step ${pasoActual >= 1 ? "step-primary" : ""}`}>Seleccionar Especialidad</li>
-                        <li className={`step ${pasoActual >= 2 ? "step-primary" : ""}`}>Seleccionar Médico</li>
-                        <li className={`step ${pasoActual >= 3 ? "step-primary" : ""}`}>Seleccionar Fecha y Hora</li>
-                        <li className={`step ${pasoActual >= 4 ? "step-primary" : ""}`}>Confirmar Cita</li>
-                    </ul>
+            </div>
 
-                </div>
-                <div className="card bg-base-100 shadow-sm p-6 mt-6 border border-primary">
-                    {pasoActual === 1 && (
-                        <>
-                            <h2 className="text-lg font-bold mb-4">¿Qué especialidad necesitas?</h2>
+            <main className="max-w-5xl mx-auto px-4 py-8 pb-28">
+
+                {!enConfirmacion ? (
+                    <div className="flex flex-col gap-10">
+
+                        {/* SECCIÓN 1: Especialidad */}
+                        <section>
+                            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-800">Seleccione una Especialidad</h2>
+                                    <p className="text-gray-500 text-sm mt-1">¿En qué área necesita atención hoy?</p>
+                                </div>
+                                <div className="relative w-full sm:w-56">
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar especialidad..."
+                                        value={busqueda}
+                                        onChange={e => setBusqueda(e.target.value)}
+                                        className="input input-bordered input-sm w-full pr-8"
+                                    />
+                                    <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                            </div>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {especialidades.map((esp) => (
+                                {especialidadesFiltradas.map((esp) => (
                                     <div
                                         key={esp.id}
                                         onClick={() => setEspecialidadSeleccionada(esp)}
-                                        className={`card bg-base-100 shadow-sm cursor-pointer border-2 transition-all
-              ${especialidadSeleccionada?.id === esp.id
-                                                ? "border-primary"
-                                                : "border-transparent hover:border-primary/30"}`}
+                                        className={`bg-white rounded-2xl p-6 cursor-pointer border-2 transition-all hover:shadow-md
+                                            ${especialidadSeleccionada?.id === esp.id
+                                                ? 'border-primary shadow-md'
+                                                : 'border-gray-100 hover:border-gray-200'}`}
                                     >
-                                        <div className="card-body items-center text-center p-4">
-                                            <span className="text-3xl">{esp.icono}</span>
-                                            <p className="font-semibold text-sm">{esp.nombre}</p>
+                                        <div className="flex flex-col items-center text-center gap-3">
+                                            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl">
+                                                {esp.icono}
+                                            </div>
+                                            <p className="font-semibold text-gray-800 text-sm">{esp.nombre}</p>
+                                            <p className="text-gray-400 text-xs leading-snug">{esp.descripcion}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                            <div className="flex justify-end mt-4">
-                                <button onClick={() => setPasoActual(2)} disabled={!especialidadSeleccionada} className="btn btn-primary">
-                                    Siguiente →
-                                </button>
-                            </div>
-                        </>
-                    )}
+                        </section>
 
-                    {pasoActual === 2 && (
-                        <>
-                            <h2 className="text-lg font-bold mb-4">¿Con qué médico quieres atenderte?</h2>
-                            <div className="flex flex-col gap-3">
-                                {medicosReales
-                                    .map((medico) => (
+                        {/* SECCIÓN 2: Médico */}
+                        <section className={`transition-opacity duration-300 ${!especialidadSeleccionada ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+                            <h2 className="text-xl font-bold text-gray-800 mb-5">Seleccione un Profesional</h2>
+                            {!especialidadSeleccionada ? (
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 text-sm text-gray-400 text-center">
+                                    Selecciona una especialidad primero
+                                </div>
+                            ) : cargandoMedicos ? (
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 flex justify-center">
+                                    <IconoCarga className="h-6 w-6 text-primary" />
+                                </div>
+                            ) : medicosReales.length === 0 ? (
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 text-sm text-gray-400 text-center">
+                                    No hay médicos disponibles para esta especialidad
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    {medicosReales.map((medico) => (
                                         <div
                                             key={medico.id}
-                                            onClick={() => setMedicoSeleccionado(medico)}
-                                            className={`card bg-base-100 shadow-sm cursor-pointer border-2 transition-all
-                ${medicoSeleccionado?.id === medico.id
-                                                    ? "border-primary"
-                                                    : "border-transparent hover:border-primary/30"}`}
+                                            onClick={() => { setMedicoSeleccionado(medico); setFecha(""); setHora("") }}
+                                            className={`bg-white rounded-2xl px-5 py-4 cursor-pointer border-2 transition-all hover:shadow-md
+                                                ${medicoSeleccionado?.id === medico.id
+                                                    ? 'border-primary shadow-md'
+                                                    : 'border-gray-100 hover:border-gray-200'}`}
                                         >
-                                            <div className="card-body p-4 flex-row items-center gap-4">
-                                                <div className="bg-base-200 rounded-full w-12 h-12 flex items-center justify-center text-xl">
-                                                    🩺
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl shrink-0">🩺</div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-gray-800">{medico.nombre}</p>
+                                                    <p className="text-sm text-gray-500">{medico.especialidad}</p>
+                                                    {medico.horaInicio && (
+                                                        <p className="text-sm text-gray-400">{medico.horaInicio} - {medico.horaFin}</p>
+                                                    )}
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold">{medico.nombre}</p>
-                                                    <p className="text-sm text-base-content/60">{medico.especialidad}</p>
-                                                    <p className="text-sm text-base-content/60">{medico.horaInicio} - {medico.horaFin}</p>
-                                                </div>
+                                                <span className="badge badge-success text-white badge-sm">DISPONIBLE</span>
                                             </div>
                                         </div>
                                     ))}
-                            </div>
-                            <div className="flex justify-between mt-4">
-                                <button className="btn btn-outline" onClick={() => setPasoActual(1)}>← Atrás</button>
-                                <button className="btn btn-primary" onClick={() => setPasoActual(3)} disabled={!medicoSeleccionado}>Siguiente →</button>
-                            </div>
-                        </>
-                    )}
-                    {pasoActual === 3 && (
-                        <>
-                            <h2 className="text-lg font-bold mb-4">Selecciona fecha y hora</h2>
+                                </div>
+                            )}
+                        </section>
 
-                            <div className="flex flex-col gap-4">
-                                <div>
-                                    <label className="text-sm font-semibold text-base-content/70 mb-1 block">Fecha</label>
-                                    <input
-                                        type="date"
-                                        className="input input-bordered w-full"
-                                        value={fecha}
-                                        min={new Date().toISOString().split('T')[0]}
-                                        onChange={(e) => {
-                                            const fechaSeleccionada = e.target.value
-                                            const hoy = new Date().toISOString().split('T')[0]
-                                            if (fechaSeleccionada < hoy) {
-                                                setFecha(hoy)
-                                            } else {
-                                                setFecha(fechaSeleccionada)
-                                            }
-                                        }}
+                        {/* SECCIÓN 3: Fecha y Hora */}
+                        <section className={`transition-opacity duration-300 ${!medicoSeleccionado ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <h2 className="text-lg font-bold text-gray-700 mb-4">Seleccione Fecha</h2>
+                                    <MiniCalendario
+                                        fecha={fecha}
+                                        onChange={(d) => { setFecha(d); setHora("") }}
                                     />
                                 </div>
-
-                                <div>
-                                    <label className="text-sm font-semibold text-base-content/70 mb-1 block">Hora</label>
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <h2 className="text-lg font-bold text-gray-700 mb-4">Horarios Disponibles</h2>
                                     {!fecha ? (
-                                        <p className="text-sm text-base-content/50">Selecciona una fecha primero</p>
+                                        <p className="text-sm text-gray-400">Selecciona una fecha primero</p>
                                     ) : generarHorasDisponibles().length === 0 ? (
-                                        <p className="text-sm text-base-content/50">Este médico no tiene horario definido</p>
+                                        <p className="text-sm text-gray-400">Este médico no tiene horario definido</p>
                                     ) : (
-                                        <div className="grid grid-cols-4 gap-2">
+                                        <div className="grid grid-cols-3 gap-2">
                                             {generarHorasDisponibles().map((h) => (
                                                 <button
                                                     key={h}
                                                     type="button"
                                                     disabled={horasOcupadas.includes(h)}
                                                     onClick={() => setHora(h)}
-                                                    className={`btn btn-sm ${horasOcupadas.includes(h)
-                                                        ? 'btn-disabled opacity-40'
-                                                        : hora === h
-                                                            ? 'btn-primary'
-                                                            : 'btn-outline btn-primary'
-                                                        }`}
+                                                    className={[
+                                                        'py-3 rounded-xl text-sm font-medium border transition-all',
+                                                        horasOcupadas.includes(h)
+                                                            ? 'text-gray-300 border-gray-100 cursor-not-allowed'
+                                                            : hora === h
+                                                                ? 'bg-primary text-primary-content border-primary'
+                                                                : 'text-gray-600 border-gray-200 hover:border-primary hover:text-primary cursor-pointer',
+                                                    ].join(' ')}
                                                 >
                                                     {h}
                                                 </button>
@@ -301,101 +374,100 @@ export default function AgendarCita() {
                                         </div>
                                     )}
                                 </div>
-
-                                <div>
-                                    <label className="text-sm font-semibold text-base-content/70 mb-1 block">Motivo de la consulta</label>
-                                    <textarea
-                                        className="textarea textarea-bordered w-full"
-                                        placeholder="Describe brevemente el motivo de tu consulta..."
-                                        rows={3}
-                                        maxLength={100}
-                                        value={motivo}
-                                        onChange={(e) => setMotivo(e.target.value)}
-                                    />
-                                </div>
                             </div>
+                        </section>
 
-                            <div className="flex justify-between mt-4">
-                                <button className="btn btn-outline" onClick={() => setPasoActual(2)}>← Atrás</button>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={() => setPasoActual(4)}
-                                    disabled={!fecha || !hora}
-                                >
-                                    Siguiente →
-                                </button>
+                        {/* SECCIÓN 4: Motivo */}
+                        <section className={`transition-opacity duration-300 ${!hora ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+                            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                <h2 className="text-lg font-bold text-gray-700 mb-4">Motivo de la consulta</h2>
+                                <textarea
+                                    className="w-full rounded-xl border border-gray-200 p-4 text-sm text-gray-700 placeholder-gray-400 resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                                    placeholder="Describe brevemente el motivo de tu consulta..."
+                                    rows={4}
+                                    maxLength={100}
+                                    value={motivo}
+                                    onChange={(e) => setMotivo(e.target.value)}
+                                />
                             </div>
-                        </>
-                    )}
-                    {pasoActual === 4 && (
-                        <>
-                            <h2 className="text-lg font-bold mb-4">Confirma tu cita</h2>
+                        </section>
 
-                            <div className="flex flex-col gap-3">
-                                <div className="bg-base-200 rounded-xl p-4 flex flex-col gap-3">
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-base-content/60">Especialidad</span>
-                                        <span className="font-semibold">{especialidadSeleccionada?.nombre}</span>
+                    </div>
+                ) : (
+                    /* PASO 4: Confirmación */
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-800 mb-6">Confirma tu cita</h2>
+                        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                            <div className="flex flex-col divide-y divide-gray-100">
+                                {[
+                                    { label: "Especialidad", valor: especialidadSeleccionada?.nombre },
+                                    { label: "Médico", valor: medicoSeleccionado?.nombre },
+                                    {
+                                        label: "Fecha", valor: fecha
+                                            ? new Date(fecha + 'T00:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })
+                                            : ''
+                                    },
+                                    { label: "Hora", valor: hora },
+                                ].map(({ label, valor }) => (
+                                    <div key={label} className="flex justify-between items-center py-3">
+                                        <span className="text-sm text-gray-500">{label}</span>
+                                        <span className="font-semibold text-gray-800">{valor}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-base-content/60">Médico</span>
-                                        <span className="font-semibold">{medicoSeleccionado?.nombre}</span>
+                                ))}
+                                {motivo && (
+                                    <div className="flex flex-col gap-1 py-3">
+                                        <span className="text-sm text-gray-500">Motivo</span>
+                                        <span className="font-semibold text-gray-800 text-sm">{motivo}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-base-content/60">Fecha</span>
-                                        <span className="font-semibold">
-                                            {fecha ? new Date(fecha + 'T00:00:00').toLocaleDateString('es-CL', {
-                                                day: '2-digit',
-                                                month: 'long',
-                                                year: 'numeric'
-                                            }) : ''}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-base-content/60">Hora</span>
-                                        <span className="font-semibold">{hora}</span>
-                                    </div>
-                                    {motivo && (
-                                        <div className="flex flex-col gap-1 mt-1">
-                                            <span className="text-sm text-base-content/60">Motivo</span>
-                                            <span className="font-semibold text-sm break-all">{motivo}</span>
-                                        </div>
-                                    )}
-                                </div>
+                                )}
                             </div>
-
-                            <div className="flex justify-between mt-4">
-                                <button
-                                    type="button"
-                                    className="btn btn-outline"
-                                    onClick={() => setPasoActual(3)}
-                                    disabled={agendando}
-                                >
-                                    ← Atrás
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-primary min-w-44 gap-2"
-                                    onClick={confirmarCita}
-                                    disabled={agendando}
-                                    aria-busy={agendando}
-                                >
-                                    {agendando ? (
-                                        <>
-                                            <IconoCarga className="h-5 w-5 shrink-0 text-primary-content" />
-                                            Agendando…
-                                        </>
-                                    ) : (
-                                        "Confirmar cita"
-                                    )}
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </div>
+                        </div>
+                        <div className="flex justify-between mt-6">
+                            <button
+                                type="button"
+                                className="btn btn-outline"
+                                onClick={() => setEnConfirmacion(false)}
+                                disabled={agendando}
+                            >
+                                ← Atrás
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary min-w-44 gap-2"
+                                onClick={confirmarCita}
+                                disabled={agendando}
+                                aria-busy={agendando}
+                            >
+                                {agendando ? (
+                                    <><IconoCarga className="h-5 w-5 shrink-0 text-primary-content" />Agendando…</>
+                                ) : "Confirmar cita"}
+                            </button>
+                        </div>
+                    </div>
+                )}
 
             </main>
-        </div>
 
-    );
+            {/* Barra inferior fija */}
+            {!enConfirmacion && (
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center shadow-lg z-40">
+                    <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Selección actual</p>
+                        <p className="font-bold text-gray-800">{especialidadSeleccionada?.nombre ?? "Ninguna"}</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={() => navigate('/paciente')} className="btn btn-ghost">Cancelar</button>
+                        <button
+                            onClick={() => setEnConfirmacion(true)}
+                            disabled={!especialidadSeleccionada || !medicoSeleccionado || !fecha || !hora}
+                            className="btn btn-primary"
+                        >
+                            Siguiente Paso →
+                        </button>
+                    </div>
+                </div>
+            )}
+
+        </div>
+    )
 }
