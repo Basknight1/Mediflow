@@ -8,34 +8,38 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [mostrarPassword, setMostrarPassword] = useState(false);
+    const [errorLogin, setErrorLogin] = useState("")
+    const [cargando, setCargando] = useState(false)
 
     const navigate = useNavigate()
     const { login } = useAuth()
 
     const handleLogin = async () => {
-        try {
-            const response = await axios.post('http://localhost:8081/usuarios/login', {
-                email,
-                password
-            })
-            login(response.data)
-            console.log(response.data)
+        if (!email.trim()) { setErrorLogin("El email es obligatorio"); return }
+        if (!password.trim()) { setErrorLogin("La contraseña es obligatoria"); return }
 
+        setErrorLogin("")
+        setCargando(true)
+        try {
+            const response = await axios.post('http://localhost:8080/bff/auth/login', { email, password })
+            login(response.data)
             const rol = response.data.rol
             if (rol === "ADMINISTRADOR") navigate("/admin")
             else if (rol === "MEDICO") navigate("/medico")
             else if (rol === "PACIENTE") navigate("/paciente")
-
-
         } catch (error) {
-            console.log('Status:', error.response?.status)
-            console.log('Mensaje:', error.response?.data)
-            console.log('Error completo:', error)
+            if (error.response?.status === 401 || error.response?.status === 400) {
+                setErrorLogin("Credenciales incorrectas. Verifica tu email y contraseña.")
+            } else {
+                setErrorLogin("No se pudo conectar con el servidor.")
+            }
+        } finally {
+            setCargando(false)
         }
     }
 
     return (
-        <div className="min-h-screen flex flex-col justify-center items-center bg-linear-to-b to-cyan-800 px-4">
+        <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-primary to-primary/70 px-4">
             <div className="text-center mb-8">
                 <h1 className="text-4xl font-bold text-white">
                     Bienvenido a MediFlow
@@ -108,7 +112,20 @@ export default function Login() {
                 </label>
                 <div className="validator-hint hidden mt-0">Ingresa una contraseña válida.</div>
 
-                <button className="btn btn-primary mt-4" onClick={handleLogin}>Iniciar Sesión</button>
+                {errorLogin && <p className="text-error text-sm mt-2">{errorLogin}</p>}
+                <button
+                    className="btn btn-primary mt-4 w-full"
+                    onClick={handleLogin}
+                    disabled={cargando}
+                >
+                    {cargando ? <span className="loading loading-spinner loading-sm"></span> : 'Iniciar Sesión'}
+                </button>
+                <p className="text-center text-sm mt-4 text-base-content/60">
+                    ¿No tienes cuenta?{" "}
+                    <button onClick={() => navigate("/register")} className="text-primary font-semibold hover:underline">
+                        Regístrate aquí
+                    </button>
+                </p>
             </fieldset>
         </div>
     );
