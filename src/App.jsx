@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/auth/Login'
+import Register from './pages/auth/Register'
+import AuthGate from './pages/auth/AuthGate'
 import HomeMedico from './pages/medico/HomeMedico'
 import AgendaMedico from './pages/medico/AgendaMedico'
 import PerfilMedico from './pages/medico/PerfilMedico'
@@ -15,11 +17,11 @@ import PacientesAdmin from './pages/admin/PacientesAdmin'
 import MedicosAdmin from './pages/admin/MedicosAdmin'
 import CitasYPagosAdmin from './pages/admin/CitasYPagosAdmin'
 import ReportesAdmin from './pages/admin/ReportesAdmin'
-import Register from './pages/auth/Register'
 
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<AuthGate />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
@@ -104,8 +106,8 @@ function App() {
         </ProtectedRoute>
       } />
 
-      <Route path="*" element={<Navigate to="/login" />} />
-    </Routes >
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   )
 }
 

@@ -2,7 +2,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import axios from "axios";
+import { api } from "../../config/api";
 import AvatarDefault from "../../assets/avatar-default.png";
 
 function getIniciales(nombre) {
@@ -25,7 +25,7 @@ export default function PacientesAdmin() {
         const cargar = async () => {
             try {
                 // Obtener todos los pacientes registrados
-                const pacientesRes = await axios.get(`http://localhost:8080/bff/admin/pacientes`);
+                const pacientesRes = await api.get(`/admin/pacientes`);
                 const data = Array.isArray(pacientesRes.data) ? pacientesRes.data : [];
                 setPacientes(data);
             } catch {

@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (Agregamos esto para que no se suba al repositorio en Github)
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

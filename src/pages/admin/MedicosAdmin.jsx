@@ -2,7 +2,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import axios from "axios";
+import { api } from "../../config/api";
 import AvatarDefault from "../../assets/avatar-default.png";
 
 function getIniciales(nombre) {
@@ -43,7 +43,7 @@ export default function MedicosAdmin() {
         const cargar = async () => {
             try {
                 // Obtener todos los médicos registrados
-                const medicosRes = await axios.get(`http://localhost:8080/bff/admin/medicos`);
+                const medicosRes = await api.get(`/admin/medicos`);
                 const data = Array.isArray(medicosRes.data) ? medicosRes.data : [];
                 setMedicos(data);
             } catch {
@@ -114,7 +114,7 @@ export default function MedicosAdmin() {
 
         try {
             const numeroRegistroAuto = `MED-${Date.now().toString().slice(-5)}`
-            await axios.post("http://localhost:8080/bff/usuarios/register", {
+            await api.post("/usuarios/register", {
                 ...nuevoMedico,
                 rol: "MEDICO",
                 numeroRegistro: numeroRegistroAuto
@@ -127,7 +127,7 @@ export default function MedicosAdmin() {
                 experiencia: "", horaInicio: "", horaFin: "",
                 genero: "", numeroRegistro: "", biografia: ""
             })
-            const res = await axios.get(`http://localhost:8080/bff/admin/medicos`)
+            const res = await api.get(`/admin/medicos`)
             setMedicos(res.data)
 
         } catch (error) {
@@ -144,7 +144,7 @@ export default function MedicosAdmin() {
     const eliminarMedico = async (id) => {
         if (!window.confirm("¿Estás seguro que deseas eliminar este médico?")) return
         try {
-            await axios.delete(`http://localhost:8080/bff/usuarios/medicos/${id}`)
+            await api.delete(`/usuarios/medicos/${id}`)
             setMedicos(medicos.filter(m => m.id !== id))
             mostrarAlerta("primary", "Médico eliminado correctamente")
             setMedicoSeleccionado(null);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { api } from "../../config/api";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import ConsultaDetalleModal from "../../components/ConsultaDetalleModal";
@@ -66,16 +66,16 @@ export default function CitasPaciente() {
         setError(null);
         setPagosError(null);
 
-        const response = await axios.get(`http://localhost:8080/bff/citas/paciente/${usuario.id}`);
+        const response = await api.get(`/citas/paciente/${usuario.id}`);
         const citasBase = Array.isArray(response.data) ? response.data : [];
 
         const citasEnriquecidas = await Promise.all(
           citasBase.map(async (cita) => {
             const detallePromise =
               cita.estado === "FINALIZADA"
-                ? axios
+                ? api
                   .get(
-                    `http://localhost:8080/bff/registros-consulta/cita/${cita.id}`
+                    `/registros-consulta/cita/${cita.id}`
                   )
                   .then((res) => res.data)
                   .catch((err) => {
@@ -86,7 +86,7 @@ export default function CitasPaciente() {
 
             try {
               const [medicoRes, registroConsulta] = await Promise.all([
-                axios.get(`http://localhost:8080/bff/usuarios/${cita.medicoId}`),
+                api.get(`/usuarios/${cita.medicoId}`),
                 detallePromise,
               ]);
 
@@ -121,7 +121,7 @@ export default function CitasPaciente() {
         setCitas(citasEnriquecidas);
 
         try {
-          const pagosRes = await axios.get(`http://localhost:8080/bff/pagos/paciente/${usuario.id}`);
+          const pagosRes = await api.get(`/pagos/paciente/${usuario.id}`);
           const pagosIniciales = Array.isArray(pagosRes.data) ? pagosRes.data : [];
           const citasConCobroEsperado = citasEnriquecidas.filter(
             (cita) => cita.estado === "CONFIRMADA" || cita.estado === "FINALIZADA"
@@ -134,8 +134,8 @@ export default function CitasPaciente() {
           } else {
             const pagosGenerados = await Promise.all(
               citasSinPago.map((cita) =>
-                axios
-                  .post("http://localhost:8080/bff/pagos", {
+                api
+                  .post("/pagos", {
                     citaId: cita.id,
                     pacienteId: cita.pacienteId,
                     medicoId: cita.medicoId,
@@ -180,7 +180,7 @@ export default function CitasPaciente() {
 
     try {
       setPagando(true);
-      const response = await axios.put(`http://localhost:8080/bff/pagos/${pagoSeleccionado.id}/pagar`);
+      const response = await api.put(`/pagos/${pagoSeleccionado.id}/pagar`);
       setPagos((prev) => prev.map((pago) => (pago.id === pagoSeleccionado.id ? response.data : pago)));
       setPagoSeleccionado(null);
     } catch (err) {

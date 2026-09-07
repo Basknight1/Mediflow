@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "../../config/api";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
@@ -19,7 +19,7 @@ export default function MiPerfilPaciente() {
             if (!usuario?.id) return;
             try {
                 setLoading(true);
-                const res = await axios.get(`http://localhost:8080/bff/usuarios/${usuario.id}`);
+                const res = await api.get(`/usuarios/${usuario.id}`);
                 setPerfil(res.data);
                 setPerfilTemp(res.data);
             } catch (err) {

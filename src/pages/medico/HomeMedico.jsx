@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react";
 import AvatarDefault from "../../assets/avatar-default.png"
-import axios from "axios";
+import { api } from "../../config/api";
 
 const accesosRapidos = [
   { label: "Mi agenda", emoji: "📅", ruta: "/medico/mi-agenda" },
@@ -39,7 +39,7 @@ export default function HomeMedico() {
 
     const cargar = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/bff/citas/medico/${usuario.id}`);
+        const res = await api.get(`/citas/medico/${usuario.id}`);
         const deHoy = res.data.filter((c) => c.fecha === hoy);
         setCitasHoy(deHoy);
 
@@ -48,7 +48,7 @@ export default function HomeMedico() {
         await Promise.all(
           ids.map(async (id) => {
             try {
-              const r = await axios.get(`http://localhost:8080/bff/usuarios/${id}`);
+              const r = await api.get(`/usuarios/${id}`);
               nombres[id] = r.data.nombre;
             } catch {
               nombres[id] = `Paciente #${id}`;
