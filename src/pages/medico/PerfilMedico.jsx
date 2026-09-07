@@ -2,7 +2,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
 import { useState, useRef } from "react";
-import axios from "axios";
+import { api } from "../../config/api";
 import AvatarDefault from "../../assets/avatar-default.png"
 
 // Perfil del médico - usa entidades separadas Usuario y Medico
@@ -34,7 +34,7 @@ export default function PerfilMedico() {
     }
     setGuardandoPassword(true);
     try {
-      await axios.put(`http://localhost:8080/bff/usuarios/${usuario.id}/password`, {
+      await api.put(`/usuarios/${usuario.id}/password`, {
         passwordActual: passwordData.passwordActual,
         passwordNueva: passwordData.passwordNueva,
       });
@@ -52,7 +52,7 @@ export default function PerfilMedico() {
     setGuardando(true);
     setError(null);
     try {
-      const response = await axios.put(`http://localhost:8080/bff/usuarios/${usuario.id}`, {
+      const response = await api.put(`/usuarios/${usuario.id}`, {
         nombre: formData.nombre,
         telefono: formData.telefono,
         biografia: medicoFormData.biografia,

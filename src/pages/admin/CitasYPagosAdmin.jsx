@@ -2,7 +2,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import axios from "axios";
+import { api } from "../../config/api";
 import AvatarDefault from "../../assets/avatar-default.png";
 
 const filtrosEstadoCitas = [
@@ -33,10 +33,10 @@ export default function CitasYPagosAdmin() {
         const cargar = async () => {
             try {
                 const [citasRes, pacientesRes, medicosRes, pagosRes] = await Promise.all([
-                    axios.get(`http://localhost:8080/bff/citas`),
-                    axios.get(`http://localhost:8080/bff/admin/pacientes`),
-                    axios.get(`http://localhost:8080/bff/admin/medicos`),
-                    axios.get(`http://localhost:8080/bff/pagos`)
+                    api.get(`/citas`),
+                    api.get(`/admin/pacientes`),
+                    api.get(`/admin/medicos`),
+                    api.get(`/pagos`)
                 ])
 
 

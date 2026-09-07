@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer"
 import { useAuth } from "../../context/AuthContext";
-import axios from "axios";
+import { api } from "../../config/api";
 
 export default function MiFichaPaciente() {
 
@@ -24,7 +24,7 @@ export default function MiFichaPaciente() {
 
             try {
                 setLoading(true);
-                const fichaRes = await axios.get(`http://localhost:8080/bff/usuarios/${usuario.id}`);
+                const fichaRes = await api.get(`/usuarios/${usuario.id}`);
                 setFicha(fichaRes.data);
             } catch (err) {
                 console.error("Error al cargar ficha:", err);

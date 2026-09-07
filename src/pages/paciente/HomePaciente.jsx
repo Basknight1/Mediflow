@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { api } from "../../config/api";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import ConsultaDetalleModal from "../../components/ConsultaDetalleModal";
@@ -56,16 +56,16 @@ export default function HomePaciente() {
 
       try {
         setLoading(true);
-        const citasRes = await axios.get(`http://localhost:8080/bff/citas/paciente/${usuario.id}`);
+        const citasRes = await api.get(`/citas/paciente/${usuario.id}`);
         const citasBase = Array.isArray(citasRes.data) ? citasRes.data : [];
 
         const citasEnriquecidas = await Promise.all(
           citasBase.map(async (cita) => {
             const detallePromise =
               cita.estado === "FINALIZADA"
-                ? axios
+                ? api
                   .get(
-                    `http://localhost:8080/bff/registros-consulta/paciente/${usuario.id}/cita/${cita.id}`
+                    `/registros-consulta/paciente/${usuario.id}/cita/${cita.id}`
                   )
                   .then((res) => res.data)
                   .catch((err) => {
@@ -76,7 +76,7 @@ export default function HomePaciente() {
 
             try {
               const [medicoRes, registroConsulta] = await Promise.all([
-                axios.get(`http://localhost:8080/bff/usuarios/${cita.medicoId}`),
+                api.get(`/usuarios/${cita.medicoId}`),
                 detallePromise,
               ]);
 

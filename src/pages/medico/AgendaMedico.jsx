@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { flushSync } from "react-dom";
-import axios from "axios";
+import { api } from "../../config/api";
 import Navbar from "../../components/Navbar";
 import { useAuth } from "../../context/AuthContext";
 import AvatarDefault from "../../assets/avatar-default.png"
@@ -135,7 +135,7 @@ export default function AgendaMedico() {
 
     const cargarCitas = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/bff/citas/medico/${usuario.id}`);
+        const res = await api.get(`/citas/medico/${usuario.id}`);
         const citasCargadas = Array.isArray(res.data) ? res.data : [];
         setCitas(citasCargadas);
 
@@ -144,7 +144,7 @@ export default function AgendaMedico() {
         await Promise.all(
           ids.map(async (id) => {
             try {
-              const r = await axios.get(`http://localhost:8080/bff/usuarios/${id}`);
+              const r = await api.get(`/usuarios/${id}`);
               nombres[id] = r.data.nombre;
             } catch {
               nombres[id] = `Paciente #${id}`;
@@ -162,7 +162,7 @@ export default function AgendaMedico() {
         await Promise.all(
           citasConPago.map(async (cita) => {
             try {
-              const pagoRes = await axios.get(`http://localhost:8080/bff/pagos/cita/${cita.id}`);
+              const pagoRes = await api.get(`/pagos/cita/${cita.id}`);
               pagosMap[cita.id] = pagoRes.data;
             } catch (err) {
               if (err?.response?.status === 404) {
@@ -193,14 +193,14 @@ export default function AgendaMedico() {
     envioEnCursoRef.current = true
     setAccionEstadoEnCurso({ citaId, nuevoEstado })
     try {
-      const res = await axios.put(
-        `http://localhost:8080/bff/citas/${citaId}/estado?nuevoEstado=${nuevoEstado}`
+      const res = await api.put(
+        `/citas/${citaId}/estado?nuevoEstado=${nuevoEstado}`
       )
       setCitas((prev) => prev.map((c) => (c.id === citaId ? res.data : c)))
 
       if (nuevoEstado === "CONFIRMADA") {
         try {
-          const pagoRes = await axios.get(`http://localhost:8080/bff/pagos/cita/${citaId}`)
+          const pagoRes = await api.get(`/pagos/cita/${citaId}`)
           setPagosPorCita((prev) => ({ ...prev, [citaId]: pagoRes.data }))
           setErroresPagoPorCita((prev) => {
             const next = { ...prev }
@@ -237,7 +237,7 @@ export default function AgendaMedico() {
 
     let registroExistente = null;
     try {
-      const res = await axios.get(`http://localhost:8080/bff/registros-consulta/cita/${cita.id}`);
+      const res = await api.get(`/registros-consulta/cita/${cita.id}`);
       registroExistente = res.data;
     } catch (err) {
       if (err?.response?.status !== 404) {
@@ -312,7 +312,7 @@ export default function AgendaMedico() {
       try {
         await esperarAnim();
 
-        await axios.post("http://localhost:8080/bff/registros-consulta", {
+        await api.post("/registros-consulta", {
           citaId: citaParaFinalizar.id,
           pacienteId: citaParaFinalizar.pacienteId,
           medicoId: citaParaFinalizar.medicoId,
@@ -321,8 +321,8 @@ export default function AgendaMedico() {
           indicaciones: formData.indicaciones.trim(),
         });
 
-        const res = await axios.put(
-          `http://localhost:8080/bff/citas/${citaParaFinalizar.id}/estado?nuevoEstado=FINALIZADA`
+        const res = await api.put(
+          `/citas/${citaParaFinalizar.id}/estado?nuevoEstado=FINALIZADA`
         );
 
         setCitas((prev) => prev.map((c) => (c.id === citaParaFinalizar.id ? res.data : c)));

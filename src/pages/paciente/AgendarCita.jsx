@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
-import axios from "axios";
+import { api } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 
 function esperarAnim() {
@@ -144,7 +144,7 @@ export default function AgendarCita() {
         void (async () => {
             try {
                 await esperarAnim()
-                await axios.post("http://localhost:8080/bff/citas", {
+                await api.post("/citas", {
                     pacienteId: usuario.id,
                     medicoId: medicoSeleccionado.id,
                     fecha,
@@ -171,7 +171,7 @@ export default function AgendarCita() {
             setHora("")
             setMedicosReales([])
             setCargandoMedicos(true)
-            axios.get(`http://localhost:8080/bff/usuarios/medicos/especialidad/${especialidadSeleccionada.nombre}`)
+            api.get(`/usuarios/medicos/especialidad/${especialidadSeleccionada.nombre}`)
                 .then(res => setMedicosReales(res.data))
                 .catch(err => console.error("Error al cargar medicos", err))
                 .finally(() => setCargandoMedicos(false))
@@ -180,7 +180,7 @@ export default function AgendarCita() {
 
     useEffect(() => {
         if (medicoSeleccionado && fecha) {
-            axios.get(`http://localhost:8080/bff/citas/medico/${medicoSeleccionado.id}/horas-ocupadas?fecha=${fecha}`)
+            api.get(`/citas/medico/${medicoSeleccionado.id}/horas-ocupadas?fecha=${fecha}`)
                 .then(res => setHorasOcupadas(res.data))
                 .catch(err => console.error(err))
         }

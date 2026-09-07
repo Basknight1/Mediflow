@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
-import axios from "axios";
+import { api } from "../../config/api";
 import { useEffect, useState } from "react";
 
 /* Datos de ejemplo de Próximas citas */
@@ -109,10 +109,10 @@ export default function HomeAdmin() {
     const cargar = async () => {
       try {
         const [citasRes, pacientesRes, medicosRes, pagosRes] = await Promise.all([
-          axios.get(`http://localhost:8080/bff/citas`),
-          axios.get(`http://localhost:8080/bff/admin/pacientes`),
-          axios.get(`http://localhost:8080/bff/admin/medicos`),
-          axios.get(`http://localhost:8080/bff/pagos`)
+          api.get(`/citas`),
+          api.get(`/admin/pacientes`),
+          api.get(`/admin/medicos`),
+          api.get(`/pagos`)
         ])
         setCitas(Array.isArray(citasRes.data) ? citasRes.data : [])
         setPacientes(Array.isArray(pacientesRes.data) ? pacientesRes.data : [])

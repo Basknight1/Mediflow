@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import { api } from "../../config/api";
 import { useNavigate } from "react-router-dom";
 
 const PASOS = ["Datos personales", "Seguridad", "Información médica", "Datos opcionales", "Confirmación"];
@@ -64,7 +64,7 @@ export default function Register() {
     const registrar = async () => {
         setCargando(true)
         try {
-            await axios.post("http://localhost:8080/bff/auth/register", {
+            await api.post("/auth/register", {
                 ...datos,
                 rol: "PACIENTE",
                 confirmarPassword: undefined

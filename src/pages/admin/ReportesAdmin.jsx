@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../../config/api";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 
@@ -29,10 +29,10 @@ export default function ReportesAdmin() {
         setError(null);
 
         const [pacientesRes, medicosRes, citasRes, pagosRes] = await Promise.all([
-          axios.get("http://localhost:8080/bff/admin/pacientes"),
-          axios.get("http://localhost:8080/bff/admin/medicos"),
-          axios.get("http://localhost:8080/bff/citas"),
-          axios.get("http://localhost:8080/bff/pagos"),
+          api.get("/admin/pacientes"),
+          api.get("/admin/medicos"),
+          api.get("/citas"),
+          api.get("/pagos"),
         ]);
 
         const pacientes = Array.isArray(pacientesRes.data) ? pacientesRes.data : [];
