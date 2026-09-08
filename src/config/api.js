@@ -6,7 +6,7 @@ import { loginRequest } from '../auth/loginRequest'
 
 // Creamos una constante general para todos los archivos con la ruta del BFF
 // para una mayor reducción de código.
-export const BFF = "http://localhost:8080/bff"
+export const BFF = "https://r65em6ooy5.execute-api.us-east-1.amazonaws.com/bff"
 
 // Instancia de axios que TODOS los componentes deben usar para hablar con el BFF.
 // Reemplaza el axios genérico: agrega automáticamente el token de Azure
