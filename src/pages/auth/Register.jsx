@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { api } from "../../config/api";
 import { useNavigate } from "react-router-dom";
+import { registrarEnCognito, confirmarCodigoCognito, iniciarSesionCognito, reenviarCodigoCognito } from "../../auth/cognitoAuth";
 
-const PASOS = ["Datos personales", "Seguridad", "Información médica", "Datos opcionales", "Confirmación"];
+const PASOS = ["Datos personales", "Seguridad", "Información médica", "Datos opcionales", "Confirmación", "Verificar email"];
 
 export default function Register() {
     const navigate = useNavigate()
     const [paso, setPaso] = useState(1)
+    const [reenviarDisponibleEn, setReenviarDisponibleEn] = useState(0)
+    const [verPassword, setVerPassword] = useState(false)
+    const [verConfirmarPassword, setVerConfirmarPassword] = useState(false)
     const [cargando, setCargando] = useState(false)
     const [errores, setErrores] = useState({})
+    const [codigo, setCodigo] = useState("")
     const [datos, setDatos] = useState({
         nombre: "", rut: "", email: "", telefono: "",
         fechaNacimiento: "", genero: "",
@@ -45,7 +50,11 @@ export default function Register() {
         }
         if (paso === 2) {
             if (!datos.password.trim()) e.password = "Obligatorio"
-            else if (datos.password.length < 6) e.password = "Mínimo 6 caracteres"
+            else if (datos.password.length < 8) e.password = "Mínimo 8 caracteres"
+            else if (!/[A-Z]/.test(datos.password)) e.password = "Debe incluir al menos una mayúscula"
+            else if (!/[a-z]/.test(datos.password)) e.password = "Debe incluir al menos una minúscula"
+            else if (!/[0-9]/.test(datos.password)) e.password = "Debe incluir al menos un número"
+            else if (!/[^A-Za-z0-9]/.test(datos.password)) e.password = "Debe incluir al menos un carácter especial (!@#$...)"
             if (!datos.confirmarPassword.trim()) e.confirmarPassword = "Obligatorio"
             else if (datos.password !== datos.confirmarPassword) e.confirmarPassword = "Las contraseñas no coinciden"
         }
@@ -61,24 +70,73 @@ export default function Register() {
         if (validarPaso()) setPaso(p => p + 1)
     }
 
-    const registrar = async () => {
+    // Paso 5 -> crea la cuenta en Cognito y pasa al paso de verificación
+    const crearCuentaCognito = async () => {
         setCargando(true)
+        setErrores({})
         try {
+            await registrarEnCognito(datos.email, datos.password, datos.nombre)
+            setPaso(6) // pasa a "Verificar email"
+        } catch (error) {
+            setErrores({ general: error?.message || "Error al crear la cuenta" })
+        } finally {
+            setCargando(false)
+        }
+    }
+
+    // Paso 6 -> confirma el código, guarda el perfil completo en MS-Usuarios, inicia sesión
+    const confirmarYRegistrar = async () => {
+        setCargando(true)
+        setErrores({})
+        try {
+            try {
+                await confirmarCodigoCognito(datos.email, codigo)
+            } catch (error) {
+                // Si la cuenta ya estaba confirmada de un intento anterior, no es un error real.
+                const yaConfirmado = error?.message?.includes('CONFIRMED')
+                if (!yaConfirmado) throw error
+            }
+
             await api.post("/auth/register", {
                 ...datos,
                 rol: "PACIENTE",
                 confirmarPassword: undefined
             })
-            navigate("/login")
+
+            await iniciarSesionCognito(datos.email, datos.password)
+            localStorage.setItem('proveedor', 'cognito')
+
+            window.location.href = "/paciente"
         } catch (error) {
             const data = error?.response?.data
-            let mensaje = "Error al registrarse"
+            let mensaje = error?.message || "Error al confirmar la cuenta"
             if (typeof data === 'string') mensaje = data
             else if (typeof data?.message === 'string') mensaje = data.message
             setErrores({ general: mensaje })
-            setPaso(1)
         } finally {
             setCargando(false)
+        }
+    }
+
+    const reenviarCodigo = async () => {
+        if (reenviarDisponibleEn > 0) return
+
+        try {
+            await reenviarCodigoCognito(datos.email)
+            setErrores({ general: "Código reenviado, revisa tu email." })
+
+            setReenviarDisponibleEn(30)
+            const intervalo = setInterval(() => {
+                setReenviarDisponibleEn(prev => {
+                    if (prev <= 1) {
+                        clearInterval(intervalo)
+                        return 0
+                    }
+                    return prev - 1
+                })
+            }, 1000)
+        } catch (error) {
+            setErrores({ general: error?.message || "No se pudo reenviar el código" })
         }
     }
 
@@ -96,7 +154,6 @@ export default function Register() {
 
             <div className="bg-white/95 rounded-box border border-base-300 w-full max-w-md p-6 shadow-lg">
 
-                {/* Indicador de pasos */}
                 <ul className="steps w-full mb-6">
                     {PASOS.map((_, i) => (
                         <li key={i} className={`step ${paso > i ? 'step-primary' : ''}`}></li>
@@ -111,7 +168,6 @@ export default function Register() {
                     </div>
                 )}
 
-                {/* Paso 1 - Datos personales */}
                 {paso === 1 && (
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
@@ -157,23 +213,64 @@ export default function Register() {
                     </div>
                 )}
 
-                {/* Paso 2 - Seguridad */}
                 {paso === 2 && (
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-base-content/70">Contraseña</label>
-                            <input className={`input input-bordered w-full ${errores.password ? 'input-error' : ''}`} type="password" placeholder="••••••••" value={datos.password} onChange={e => actualizar('password', e.target.value)} />
+                            <div className="relative">
+                                <input
+                                    className={`input input-bordered w-full pr-10 ${errores.password ? 'input-error' : ''}`}
+                                    type={verPassword ? "text" : "password"}
+                                    placeholder="••••••••"
+                                    value={datos.password}
+                                    onChange={e => actualizar('password', e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50"
+                                    onClick={() => setVerPassword(v => !v)}
+                                >
+                                    {verPassword ? <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                    </svg>
+                                        : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                    }
+                                </button>
+                            </div>
                             {errores.password && <span className="text-xs text-error">{errores.password}</span>}
+                            <span className="text-xs text-base-content/50">Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</span>
                         </div>
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-base-content/70">Confirmar contraseña</label>
-                            <input className={`input input-bordered w-full ${errores.confirmarPassword ? 'input-error' : ''}`} type="password" placeholder="••••••••" value={datos.confirmarPassword} onChange={e => actualizar('confirmarPassword', e.target.value)} />
+                            <div className="relative">
+                                <input
+                                    className={`input input-bordered w-full pr-10 ${errores.confirmarPassword ? 'input-error' : ''}`}
+                                    type={verConfirmarPassword ? "text" : "password"}
+                                    placeholder="••••••••"
+                                    value={datos.confirmarPassword}
+                                    onChange={e => actualizar('confirmarPassword', e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50"
+                                    onClick={() => setVerConfirmarPassword(v => !v)}
+                                >
+                                    {verConfirmarPassword ? <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                    </svg> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                    </svg>}
+                                </button>
+                            </div>
                             {errores.confirmarPassword && <span className="text-xs text-error">{errores.confirmarPassword}</span>}
                         </div>
                     </div>
                 )}
 
-                {/* Paso 3 - Información médica */}
                 {paso === 3 && (
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
@@ -208,7 +305,6 @@ export default function Register() {
                     </div>
                 )}
 
-                {/* Paso 4 - Datos opcionales */}
                 {paso === 4 && (
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
@@ -226,7 +322,6 @@ export default function Register() {
                     </div>
                 )}
 
-                {/* Paso 5 - Confirmación */}
                 {paso === 5 && (
                     <div className="flex flex-col gap-2 text-sm">
                         <div className="flex justify-between"><span className="text-base-content/60">Nombre</span><span>{datos.nombre}</span></div>
@@ -243,28 +338,59 @@ export default function Register() {
                     </div>
                 )}
 
-                {/* Botones */}
+                {paso === 6 && (
+                    <div className="flex flex-col gap-3">
+                        <p className="text-sm text-base-content/70">
+                            Enviamos un código de verificación a <b>{datos.email}</b>. Ingrésalo abajo para activar tu cuenta.
+                        </p>
+
+                        <input
+                            className="input input-bordered w-full text-center text-lg tracking-widest"
+                            placeholder="123456"
+                            maxLength={6}
+                            value={codigo}
+                            onChange={e => setCodigo(e.target.value)}
+                        />
+                        <button
+                            className="text-xs text-primary hover:underline disabled:text-base-content/40 disabled:no-underline disabled:cursor-not-allowed"
+                            onClick={reenviarCodigo}
+                            disabled={reenviarDisponibleEn > 0}
+                        >
+                            {reenviarDisponibleEn > 0 ? `Reenviar código (${reenviarDisponibleEn}s)` : 'Reenviar código'}
+                        </button>
+                    </div>
+                )}
+
                 <div className="flex justify-between mt-6">
-                    {paso > 1 ? (
+                    {paso > 1 && paso < 6 ? (
                         <button className="btn btn-outline" onClick={() => setPaso(p => p - 1)}>← Atrás</button>
-                    ) : (
+                    ) : paso === 1 ? (
                         <button className="btn btn-ghost" onClick={() => navigate("/login")}>← Volver</button>
-                    )}
-                    {paso < 5 ? (
+                    ) : <div />}
+
+                    {paso < 5 && (
                         <button className="btn btn-primary" onClick={siguiente}>Siguiente →</button>
-                    ) : (
-                        <button className="btn btn-primary" onClick={registrar} disabled={cargando}>
+                    )}
+                    {paso === 5 && (
+                        <button className="btn btn-primary" onClick={crearCuentaCognito} disabled={cargando}>
                             {cargando ? <span className="loading loading-spinner loading-sm"></span> : '✓ Crear cuenta'}
+                        </button>
+                    )}
+                    {paso === 6 && (
+                        <button className="btn btn-primary" onClick={confirmarYRegistrar} disabled={cargando || codigo.length < 6}>
+                            {cargando ? <span className="loading loading-spinner loading-sm"></span> : 'Verificar y entrar'}
                         </button>
                     )}
                 </div>
 
-                <p className="text-center text-sm text-base-content/60 mt-4">
-                    ¿Ya tienes cuenta?{" "}
-                    <button onClick={() => navigate("/login")} className="text-primary font-semibold hover:underline">
-                        Inicia sesión
-                    </button>
-                </p>
+                {paso < 6 && (
+                    <p className="text-center text-sm text-base-content/60 mt-4">
+                        ¿Ya tienes cuenta?{" "}
+                        <button onClick={() => navigate("/login")} className="text-primary font-semibold hover:underline">
+                            Inicia sesión
+                        </button>
+                    </p>
+                )}
             </div>
         </div>
     )
