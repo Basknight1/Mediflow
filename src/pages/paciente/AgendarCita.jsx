@@ -171,7 +171,9 @@ export default function AgendarCita() {
             setHora("")
             setMedicosReales([])
             setCargandoMedicos(true)
-            api.get(`/usuarios/medicos/especialidad/${especialidadSeleccionada.nombre}`)
+            api.get('/usuarios/medicos/especialidad', {
+                params: { nombre: especialidadSeleccionada.nombre }
+            })
                 .then(res => setMedicosReales(res.data))
                 .catch(err => console.error("Error al cargar medicos", err))
                 .finally(() => setCargandoMedicos(false))
